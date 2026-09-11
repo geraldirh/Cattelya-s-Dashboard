@@ -1,0 +1,152 @@
+7: <title>OrchidCare — Smart Orchid Greenhouse</title>
+9: content="Sistem monitoring greenhouse anggrek pintar dengan analisis AI — diagnosis penyakit, kontrol aktuator, dan data logger terpadu.">
+42: /* ─── BACKGROUND ──────────────────────────────────────── */
+80: /* ─── HERO HEADER ─────────────────────────────────────── */
+140: /* ─── MAIN WRAPPER ─────────────────────────────────────── */
+149: /* ─── TAB BAR ──────────────────────────────────────────── */
+192: /* ─── GLASS CARD ────────────────────────────────────────── */
+202: /* ─── TAB CONTENT ───────────────────────────────────────── */
+224: /* ─── SECTION TITLE ─────────────────────────────────────── */
+236: /* ═══════════════════════════════════════════════════════
+237: TAB 1 — DOKTER ANGGREK
+238: ═══════════════════════════════════════════════════════ */
+252: /* ─── Mobile Hamburger Menu ─── */
+307: /* ─── Recent Chats Sidebar ─── */
+461: /* ─── Chat Box ─── */
+589: /* ─── Chat Attachment & Preview ─── */
+718: /* ─── BTN ACTION ─── */
+792: /* ═══════════════════════════════════════════════════════
+793: TAB 2 — GREENHOUSE DASHBOARD (Centered & Gauges)
+794: ═══════════════════════════════════════════════════════ */
+822: /* Weather Card — Centered */
+840: content: '☁';
+849: /* ── Metric Card — Centered ─── */
+1386: /* ═══════════════════════════════════════════════════════
+1387: TAB 3 — KONFIG DUMMY
+1388: ═══════════════════════════════════════════════════════ */
+1450: /* ═══════════════════════════════════════════════════════
+1451: TAB 4 — DATA LOGGER
+1452: ═══════════════════════════════════════════════════════ */
+1539: /* ─── FOOTER ───────────────────────────────────────────── */
+1550: /* ═══════════════════════════════════════════════════════
+1552: ═══════════════════════════════════════════════════════ */
+1732: <!-- ───── HERO ───── -->
+1734: <div class="hero-badge">🌿 Smart Greenhouse IoT & AI</div>
+1737: <span class="green"> 🌸</span>
+1743: <!-- ───── MAIN ───── -->
+1748: <span id="mobileNavTitle">🌡️ Monitoring</span>
+1759: 🌡️ Monitoring
+1762: ⚡ Kontrol Aktuator
+1765: 📸 Dokter Anggrek
+1768: 🔧 Konfig Threshold
+1771: 📊 Data Logger
+1775: <!-- ══════════════ TAB: DOKTER ANGGREK ══════════════ -->
+1793: <div class="chat-header-title">🩺 Dokter Anggrek Chat AI</div>
+1794: <button class="chat-reset-btn" onclick="resetChat()">🧹 Reset</button>
+1798: Halo! Saya <b>Dokter Anggrek AI</b> 🌸<br><br>
+1800: • Diagnosis penyakit & hama anggrek via foto<br>
+1801: • Perawatan, penyiraman, dan pemupukan<br>
+1802: • Tips media tanam & pencegahan hama<br>
+1803: • Konsultasi anggrek lainnya<br><br>
+1804: Ketik pertanyaan atau klik ikon <b>📎 Foto</b> untuk melampirkan gambar anggrek Anda! 🩺
+1812: <button type="button" class="chat-attach-remove-btn" onclick="clearChatImageAttachment()" title="Hapus foto">✕</button>
+1826: 📷
+1832: <button class="chat-send-btn" id="chatSendBtn" onclick="sendChatMessage()">Kirim ➔</button>
+1839: <!-- ══════════════ TAB: GREENHOUSE MONITORING (DEFAULT) ══════════════ -->
+1848: <span class="metric-card-icon">⛅</span>
+1854: --.-°C</div>
+1861: id="wWind">💨 -- km/h</span>
+1863: id="wHumid">💧 --%</span>
+1870: <span class="metric-card-icon">🌿</span>
+1883: <div class="gauge-val" id="vAirTemp">25°C</div>
+1904: <span>☀️ Intensitas Cahaya</span>
+1916: <span class="metric-card-icon">💧</span>
+1940: <span class="meja-header-text">🌱 Sensor Tanah Per Meja</span>
+1948: <span class="metric-card-icon">🪴</span>
+1954: <div class="soil-stat-lbl">🌡️ Suhu</div>
+1955: <div class="soil-stat-val" id="vM1Suhu">23.5°C</div>
+1958: <div class="soil-stat-lbl">💧 Moisture</div>
+1996: <span class="metric-card-icon">🪴</span>
+2002: <div class="soil-stat-lbl">🌡️ Suhu</div>
+2003: <div class="soil-stat-val" id="vM2Suhu">23.8°C</div>
+2006: <div class="soil-stat-lbl">💧 Moisture</div>
+2044: <span class="metric-card-icon">🪴</span>
+2050: <div class="soil-stat-lbl">🌡️ Suhu</div>
+2051: <div class="soil-stat-val" id="vM3Suhu">24.1°C</div>
+2054: <div class="soil-stat-lbl">💧 Moisture</div>
+2095: <!-- ══════════════ TAB: KONTROL AKTUATOR ══════════════ -->
+2098: <div class="section-title" style="margin-bottom:8px;">⚡ Panel Kontrol Aktuator Greenhouse</div>
+2108: <button class="mode-pill active" id="btnModeAuto" onclick="setActuatorMode('auto')">🤖
+2110: <button class="mode-pill" id="btnModeManual" onclick="setActuatorMode('manual')">⚙️
+2116: <span style="font-size:1.1rem; flex-shrink:0;">💡</span>
+2125: <div class="act-icon-wrap">💨</div>
+2143: <div class="act-icon-wrap">🌫️</div>
+2161: <div class="act-icon-wrap">💦</div>
+2179: <div class="act-icon-wrap">🧪</div>
+2198: <!-- ══════════════ TAB 3: KONFIG DUMMY ══════════════ -->
+2201: <div class="section-title">🔧 PLC Threshold Configuration</div>
+2226: <div style="grid-column: 1 / -1; margin-bottom: -5px;"><strong style="color:var(--text-muted)">🌤️ Setpoint Sensor</strong></div>
+2229: <div class="sl-row"><span>🌡️ Suhu Siang (°C)</span></div>
+2233: <div class="sl-row"><span>🌡️ Suhu Malam (°C)</span></div>
+2237: <div class="sl-row"><span>💧 Hum Low (%)</span></div>
+2241: <div class="sl-row"><span>💦 TDS Sp (ppm)</span></div>
+2245: <div class="sl-row"><span>🌱 Soil Temp (°C)</span></div>
+2249: <div class="sl-row"><span>💧 Soil Moist (%)</span></div>
+2254: <div style="grid-column: 1 / -1; margin-top: 15px; margin-bottom: -5px;"><strong style="color:var(--text-muted)">⏱️ Setpoint Durasi Aktuator (detik)</strong></div>
+2257: <div class="sl-row"><span>💨 Mist ON</span></div>
+2261: <div class="sl-row"><span>💨 Mist OFF</span></div>
+2265: <div class="sl-row"><span>🚰 Murni ON</span></div>
+2269: <div class="sl-row"><span>🚰 Murni OFF</span></div>
+2273: <div class="sl-row"><span>🧪 Nutrisi ON</span></div>
+2277: <div class="sl-row"><span>🧪 Nutrisi OFF</span></div>
+2282: <div style="grid-column: 1 / -1; margin-top: 15px; margin-bottom: -5px;"><strong style="color:var(--text-muted)">📅 Setpoint Jadwal Nutrisi</strong></div>
+2294: <div class="sl-row"><span>⏰ Jam Penyiraman (0-23)</span></div>
+2301: 📡 Kirim Threshold ke PLC
+2311: <!-- ══════════════ TAB 4: DATA LOGGER ══════════════ -->
+2315: <div class="section-title" style="margin-bottom:20px;">📈 Grafik Tren Parameter Klimatologi</div>
+2322: <span>📋 Riwayat Log Data Sensor</span>
+2323: <button class="refresh-btn" onclick="fetchAndPopulateLogs()">🔄 Refresh</button>
+2352: <div class="footer">© 2026 OrchiCare AI · Smart Greenhouse Monitoring System · Powered by Google Gemini AI</div>
+2354: <!-- ═══════════ JAVASCRIPT ═══════════ -->
+2356: /* ── State ──────────────────────────────────── */
+2364: /* ── Mobile Hamburger Menu Toggle ───────────── */
+2379: /* ── Tab Switch ─────────────────────────────── */
+2400: /* ── Gauge Renderer ─────────────────────────── */
+2418: /* ── Actuator Mode ──────────────────────────── */
+2510: /* ── File Upload / Image Attachment in Chat ── */
+2541: /* ── Markdown converter (simple) ───────────── */
+2546: /* ── Chat bubble helper & Typing Indicator ─── */
+2657: Halo! Saya <b>Dokter Anggrek AI</b> 🌸<br><br>
+2659: • Diagnosis penyakit & hama anggrek via foto<br>
+2660: • Perawatan, penyiraman, dan pemupukan<br>
+2661: • Tips media tanam & pencegahan hama<br>
+2662: • Konsultasi anggrek lainnya<br><br>
+2663: Ketik pertanyaan atau klik ikon <b>📎 Foto</b> untuk melampirkan gambar anggrek Anda! 🩺
+2689: btn.innerText = '⌛';
+2714: appendBubble('ai', '⚠️ Gagal mendapatkan respon: ' + err.message);
+2719: btn.innerText = 'Kirim ➔';
+2729: /* ── Metrics to Backend ─────────────────────── */
+2767: updateGauge('cAirTemp', 'vAirTemp', vals.air_temperature, 15, 45, '°C');
+2774: setMetricText('vM1Suhu', vals.meja1.suhu, '°C');
+2779: setMetricText('vM2Suhu', vals.meja2.suhu, '°C');
+2784: setMetricText('vM3Suhu', vals.meja3.suhu, '°C');
+2790: document.getElementById('resAir').innerText = data.status_udara || '—';
+2791: document.getElementById('resSoil').innerText = data.status_tanah || '—';
+2792: document.getElementById('resTDS').innerText = data.status_nutrisi || '—';
+2793: document.getElementById('resSolar').innerText = data.status_cahaya || '—';
+2835: /* ── Logger ─────────────────────────────────── */
+2855: <td>${log.air_temperature != null ? log.air_temperature + '°C' : '-'}</td>
+2876: { label: 'Suhu Udara (°C)', data: logs.map(l => l.air_temperature), borderColor: '#2e7d32', borderWidth: 2.5, tension: 0.35, yAxisID: 'y' },
+2886: y: { position: 'left', title: { display: true, text: 'Suhu (°C)' }, suggestedMin: 15, suggestedMax: 40 },
+2968: /* ── Gauge & Meter Helpers ─────────────────── */
+3021: updateGauge('cAirTemp', 'vAirTemp', 25.0, 15, 45, '°C');
+3028: setMetricText('vM1Suhu', 23.5, '°C');
+3034: setMetricText('vM2Suhu', 23.8, '°C');
+3040: setMetricText('vM3Suhu', 24.1, '°C');
+3061: document.getElementById('wTemp').innerText = current.temperature_2m + '°C';
+3062: document.getElementById('wWind').innerText = '💨 ' + current.wind_speed_10m + ' km/h';
+3063: document.getElementById('wHumid').innerText = '💧 ' + current.relative_humidity_2m + '%';
+3077: updateGauge('cAirTemp', 'vAirTemp', data.air_temperature, 15, 45, '°C');
+3088: setMetricText('vM1Suhu', data.meja1.suhu, '°C');
+3096: setMetricText('vM2Suhu', data.meja2.suhu, '°C');
+3104: setMetricText('vM3Suhu', data.meja3.suhu, '°C');
