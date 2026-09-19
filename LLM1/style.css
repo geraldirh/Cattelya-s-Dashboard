@@ -2253,3 +2253,40 @@ body::before {
 :root.dark-theme body::before {
     opacity: 1;
 }
+
+/* Fix Dark Mode Card Backgrounds */
+:root.dark-theme .metric-card,
+:root.dark-theme .actuator-card,
+:root.dark-theme .param-card,
+:root.dark-theme .table-wrap,
+:root.dark-theme .chart-wrap,
+:root.dark-theme .glass-card,
+:root.dark-theme .chat-container,
+:root.dark-theme .chat-sidebar {
+    background: var(--glass) !important;
+    border-color: var(--glass-border) !important;
+    color: var(--text-dark) !important;
+}
+
+:root.dark-theme .actuator-card.on-fan,
+:root.dark-theme .actuator-card.on-mist {
+    background: rgba(15, 23, 42, 0.95) !important;
+}
+
+:root.dark-theme .chat-messages {
+    background: rgba(0, 0, 0, 0.2) !important;
+}
+
+:root.dark-theme .chat-input-area {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border-color: var(--glass-border) !important;
+}
+
+:root.dark-theme input,
+:root.dark-theme th,
+:root.dark-theme td {
+    color: var(--text-dark) !important;
+}
+:root.dark-theme tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}

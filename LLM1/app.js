@@ -403,7 +403,7 @@
             showTypingIndicator();
 
             try {
-                const res = await fetch('/chat-stream', {
+                const res = await fetch('/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -413,47 +413,32 @@
                         history: chatHistory
                     })
                 });
+                const data = await res.json();
                 removeTypingIndicator();
-                if (!res.ok) throw new Error('Error server');
+                if (!res.ok) throw new Error(data.detail || 'Error server');
                 
-                const reader = res.body.getReader();
-                const decoder = new TextDecoder("utf-8");
-                let done = false;
-                let fullText = "";
-                
-                // Create empty AI bubble
+                const responseText = data.response;
                 const el = document.createElement('div');
-                el.className = 'chat-bubble ai';
+                el.className = 'chat-bubble ai chat-markdown-body';
                 const msgs = document.getElementById('chatMessages');
                 msgs.appendChild(el);
-                msgs.scrollTop = msgs.scrollHeight;
                 
-                while (!done) {
-                    const { value, done: readerDone } = await reader.read();
-                    done = readerDone;
-                    if (value) {
-                        const chunkStr = decoder.decode(value, { stream: true });
-                        const lines = chunkStr.split('\n');
-                        for (let line of lines) {
-                            if (line.startsWith('data: ')) {
-                                const dataStr = line.substring(6);
-                                if (dataStr === '[DONE]') break;
-                                try {
-                                    const data = JSON.parse(dataStr);
-                                    if (data.error) throw new Error(data.error);
-                                    fullText += data.chunk;
-                                    const parsedHtml = (typeof marked !== 'undefined') ? marked.parse(fullText) : fullText;
-                                    el.innerHTML = `<div class="chat-markdown-body">${parsedHtml}</div>`;
-                                    msgs.scrollTop = msgs.scrollHeight;
-                                } catch(e) {}
-                            }
-                        }
+                // Frontend Typewriter Effect
+                let i = 0;
+                let currentText = "";
+                const typeInterval = setInterval(() => {
+                    currentText += responseText.charAt(i);
+                    el.innerHTML = (typeof marked !== 'undefined') ? marked.parse(currentText) : currentText;
+                    msgs.scrollTop = msgs.scrollHeight;
+                    i++;
+                    if (i >= responseText.length) {
+                        clearInterval(typeInterval);
                     }
-                }
-                
+                }, 10); // 10ms per char is very fast and smooth
+
                 const historyUserMsg = msg ? (attachedImg ? `${msg} [Foto terlampir]` : msg) : '[Melampirkan foto anggrek]';
                 chatHistory.push({ role: 'user', content: historyUserMsg });
-                chatHistory.push({ role: 'model', content: fullText });
+                chatHistory.push({ role: 'model', content: responseText });
                 loadRecentChats(); // Refresh daftar riwayat chat di sidebar
             } catch (err) {
                 removeTypingIndicator();

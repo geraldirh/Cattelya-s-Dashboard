@@ -6,7 +6,7 @@ import base64
 import asyncio
 from typing import Optional
 from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -760,12 +760,18 @@ def set_greenhouse_thresholds(
     except Exception as e:
         return f"Gagal mengatur threshold karena error: {str(e)}"
 
-@app.post("/chat-stream")
-async def chat_orchid_stream(request: ChatRequest):
+@app.post("/chat")
+async def chat_orchid(request: ChatRequest):
+    # Pastikan API key sudah diatur
     if not os.getenv("GEMINI_API_KEY"):
-        raise HTTPException(status_code=500, detail="API Key Gemini belum dikonfigurasi.")
-    
+        raise HTTPException(
+            status_code=500, 
+            detail="API Key Gemini belum dikonfigurasi. Silakan buat file .env dan isi GEMINI_API_KEY."
+        )
+
     try:
+        # Gunakan system_instruction untuk membatasi ke topik anggrek saja
+        # Injeksi kondisi live
         live_telemetry_str = json.dumps(latest_telemetry)
         live_actuator_str = json.dumps(latest_actuators)
         
@@ -774,18 +780,19 @@ async def chat_orchid_stream(request: ChatRequest):
             f"KONDISI GREENHOUSE SAAT INI (REAL-TIME):\n- Data Sensor: {live_telemetry_str}\n- Status Aktuator: {live_actuator_str}\n\n"
             "Tugas Anda:\n"
             "1. Menjawab pertanyaan pengguna tentang anggrek (perawatan, penyakit, hama, pemupukan, dll).\n"
-            "2. Anda BOLEH membaca dan menganalisis KONDISI GREENHOUSE SAAT INI di atas jika pengguna bertanya tentang keadaan greenhouse.\n"
-            "3. Jika Anda menilai kondisinya tidak wajar, sarankan solusi.\n"
-            "4. Jika pengguna meminta menyetel parameter, Anda memiliki ALAT (Function Calling) bernama `set_greenhouse_thresholds` untuk mengubahnya.\n\n"
-            "PENTING: Anda hanya boleh membahas hal seputar anggrek dan kendali Greenhouse."
+            "2. Anda BOLEH membaca dan menganalisis KONDISI GREENHOUSE SAAT INI di atas jika pengguna bertanya tentang keadaan greenhouse (contoh: 'Berapa suhu sekarang?', 'Apakah GH aman?').\n"
+            "3. Jika Anda menilai kondisinya tidak wajar (misal suhu >35C atau <20C, kelembapan terlalu rendah), sarankan solusi atau perubahan batas suhu.\n"
+            "4. Jika pengguna meminta Anda untuk menyetel, mengubah, atau menerapkan parameter (misalnya 'atur parameter ke suhu 28', 'bantu setel parameter yang ideal'), Anda memiliki ALAT (Function Calling) bernama `set_greenhouse_thresholds` untuk mengubahnya secara langsung! Eksekusi alat tersebut dengan angka yang tepat untuk Suhu Siang, Suhu Malam, Hum low, TDS, dll sesuai standar anggrek (seperti Phalaenopsis atau Dendrobium) atau sesuai angka permintaan pengguna.\n\n"
+            "PENTING: Anda hanya boleh membahas hal seputar anggrek dan kendali Greenhouse. Tolak pertanyaan di luar itu dengan sopan."
         )
         
         model = genai.GenerativeModel(
-            model_name='gemini-1.5-flash',
+            model_name='gemini-3.5-flash-lite',
             system_instruction=system_instruction,
             tools=[set_greenhouse_thresholds]
         )
         
+        # Konversi history ke format API SDK Gemini
         gemini_history = []
         for msg in request.history:
             gemini_history.append({
@@ -795,10 +802,12 @@ async def chat_orchid_stream(request: ChatRequest):
             
         chat = model.start_chat(history=gemini_history, enable_automatic_function_calling=True)
 
+        # Siapkan payload pesan (bisa berupa teks saja atau multimodal dengan gambar PIL)
         message_parts = []
         pil_image = None
         if request.image:
             try:
+                # Format request.image bisa berupa data URI: data:image/png;base64,... atau raw base64
                 img_data_str = request.image
                 if "," in img_data_str:
                     img_data_str = img_data_str.split(",", 1)[1]
@@ -810,41 +819,38 @@ async def chat_orchid_stream(request: ChatRequest):
 
         text_prompt = request.message.strip() if request.message else ""
         if not text_prompt and pil_image:
-            text_prompt = "Tolong periksa dan analisis kondisi tanaman anggrek pada foto ini."
+            text_prompt = "Tolong periksa dan analisis kondisi tanaman anggrek pada foto ini. Apakah tanaman ini sehat atau mengalami penyakit/hama? Berikan penjelasan gejala dan solusi penanganannya."
+
         if text_prompt:
             message_parts.append(text_prompt)
-            
-        async def generate_chat():
+
+        # Kirim ke Gemini Chat
+        if len(message_parts) == 1 and isinstance(message_parts[0], str):
+            response = chat.send_message(message_parts[0])
+        else:
+            response = chat.send_message(message_parts)
+        
+        if supabase:
             try:
-                if len(message_parts) == 1 and isinstance(message_parts[0], str):
-                    response_stream = chat.send_message(message_parts[0], stream=True)
-                else:
-                    response_stream = chat.send_message(message_parts, stream=True)
-                
-                full_text = ""
-                for chunk in response_stream:
-                    if chunk.text:
-                        full_text += chunk.text
-                        yield f"data: {json.dumps({'chunk': chunk.text})}\n\n"
-                        await asyncio.sleep(0.01) # Small delay to flush to client
-                
-                if supabase:
-                    sid = request.session_id if request.session_id else "default"
-                    log_user_msg = request.message if request.message else "[Foto Anggrek Terlampir]"
-                    try:
-                        supabase.table("chat_logs").insert({"session_id": sid, "role": "user", "message": log_user_msg}).execute()
-                        supabase.table("chat_logs").insert({"session_id": sid, "role": "model", "message": full_text}).execute()
-                    except Exception:
-                        u_msg = json.dumps({"sid": sid, "text": log_user_msg})
-                        m_msg = json.dumps({"sid": sid, "text": full_text})
-                        supabase.table("chat_logs").insert({"role": "user", "message": u_msg}).execute()
-                        supabase.table("chat_logs").insert({"role": "model", "message": m_msg}).execute()
-                
-                yield "data: [DONE]\n\n"
+                sid = request.session_id if request.session_id else "default"
+                # Coba simpan dengan kolom session_id asli
+                log_user_msg = request.message if request.message else "[Foto Anggrek Terlampir]"
+                try:
+                    supabase.table("chat_logs").insert({"session_id": sid, "role": "user", "message": log_user_msg}).execute()
+                    supabase.table("chat_logs").insert({"session_id": sid, "role": "model", "message": response.text}).execute()
+                except Exception:
+                    # Fallback jika kolom session_id belum dibuat di tabel: encode session_id di dalam JSON message
+                    u_msg = json.dumps({"sid": sid, "text": log_user_msg})
+                    m_msg = json.dumps({"sid": sid, "text": response.text})
+                    supabase.table("chat_logs").insert({"role": "user", "message": u_msg}).execute()
+                    supabase.table("chat_logs").insert({"role": "model", "message": m_msg}).execute()
             except Exception as e:
-                yield f"data: {json.dumps({'error': str(e)})}\n\n"
-                
-        return StreamingResponse(generate_chat(), media_type="text/event-stream")
+                print(f"Error logging chat to Supabase: {e}")
+        
+        return {
+            "status": "success",
+            "response": response.text
+        }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Terjadi kesalahan pada chatbot: {str(e)}")
