@@ -2138,7 +2138,18 @@
             padding-bottom: 0;
             /* Biar bar input nempel bawah */
         }
-        /* ─── MAC DOCK NAVIGATION ─── */
+        /* Latar Footer Khusus untuk Dock */
+        .dock-footer-bg {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 120px;
+            background: linear-gradient(to top, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, 0.4) 60%, transparent 100%);
+            z-index: 998;
+            pointer-events: none;
+        }
+
         .mac-dock {
             position: fixed;
             bottom: 24px;
@@ -3082,6 +3093,7 @@
         </div>
 
         <!-- MAC DOCK NAVIGATION -->
+        <div class="dock-footer-bg"></div>
         <nav class="mac-dock" id="macDock">
             <div class="dock-item" onclick="switchTab('greenhouse')">
                 <i data-lucide="thermometer"></i>
