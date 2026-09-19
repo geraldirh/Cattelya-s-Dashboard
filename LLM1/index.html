@@ -2138,6 +2138,89 @@
             padding-bottom: 0;
             /* Biar bar input nempel bawah */
         }
+        /* ─── MAC DOCK NAVIGATION ─── */
+        .mac-dock {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: 32px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .dock-item {
+            position: relative;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            border-radius: 50%;
+            color: #475569;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            will-change: width, height, margin-bottom;
+            transform-origin: bottom;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .dock-item svg {
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+            will-change: width, height;
+        }
+
+        .dock-item:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .dock-tooltip {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-family: 'Outfit', sans-serif;
+            pointer-events: none;
+            opacity: 0;
+            white-space: nowrap;
+            transition: opacity 0.2s;
+        }
+
+        .dock-item:hover .dock-tooltip {
+            opacity: 1;
+        }
+
+        @media (max-width: 600px) {
+            .mac-dock {
+                width: 90%;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 12px;
+            }
+            .dock-item {
+                width: 44px;
+                height: 44px;
+            }
+            .dock-tooltip { display: none; }
+        }
     </style>
 
     <!-- Lucide Icons -->
@@ -2172,7 +2255,7 @@
     <div class="main-wrapper">
 
         <!-- TOMBOL HAMBURGER MOBILE -->
-        <button class="mobile-nav-toggle" id="mobileNavToggle" onclick="toggleMobileMenu()">
+        <button class="mobile-nav-toggle" id="mobileNavToggle" onclick="toggleMobileMenu()" style="display: none !important;">
             <span id="mobileNavTitle"><i data-lucide="thermometer"></i> Monitoring</span>
             <div class="mobile-burger-icon">
                 <span></span>
@@ -2182,7 +2265,7 @@
         </button>
 
         <!-- TAB BAR -->
-        <div class="tabs-nav" id="mainTabsNav">
+        <div class="tabs-nav" id="mainTabsNav" style="display: none !important;">
             <button class="tab-btn active" id="tabBtn-greenhouse" onclick="switchTab('greenhouse')">
                 <i data-lucide="thermometer"></i> Monitoring
             </button>
@@ -2997,6 +3080,30 @@
                 </div>
             </div>
         </div>
+
+        <!-- MAC DOCK NAVIGATION -->
+        <nav class="mac-dock" id="macDock">
+            <div class="dock-item" onclick="switchTab('greenhouse')">
+                <i data-lucide="thermometer"></i>
+                <span class="dock-tooltip">Monitoring</span>
+            </div>
+            <div class="dock-item" onclick="switchTab('control')">
+                <i data-lucide="zap"></i>
+                <span class="dock-tooltip">Aktuator</span>
+            </div>
+            <div class="dock-item" onclick="switchTab('diagnose')">
+                <i data-lucide="camera"></i>
+                <span class="dock-tooltip">Dokter AI</span>
+            </div>
+            <div class="dock-item" id="dockBtn-simconfig" onclick="switchTab('simconfig')" style="display: none;">
+                <i data-lucide="settings"></i>
+                <span class="dock-tooltip">Threshold</span>
+            </div>
+            <div class="dock-item" onclick="switchTab('logger')">
+                <i data-lucide="bar-chart-2"></i>
+                <span class="dock-tooltip">Data Logger</span>
+            </div>
+        </nav>
 
     </div><!-- .main-wrapper -->
 
@@ -3920,6 +4027,66 @@
             } catch (e) {
                 console.error("Gagal mengambil telemetry real-time", e);
             }
+        }
+
+        /* ─── MAC DOCK MAGNIFICATION LOGIC ─── */
+        const macDock = document.getElementById('macDock');
+        const dockItems = macDock ? macDock.querySelectorAll('.dock-item') : [];
+        const maxScale = 1.4;
+        const proximity = 120; // Radius sensor kursor
+
+        if (macDock && typeof gsap !== 'undefined') {
+            macDock.addEventListener('mousemove', (e) => {
+                const mouseX = e.clientX;
+                dockItems.forEach(item => {
+                    const rect = item.getBoundingClientRect();
+                    const itemCenterX = rect.left + rect.width / 2;
+                    const distance = Math.abs(mouseX - itemCenterX);
+                    
+                    let scale = 1;
+                    if (distance < proximity) {
+                        scale = 1 + (maxScale - 1) * Math.cos((distance / proximity) * (Math.PI / 2));
+                    }
+                    
+                    gsap.to(item, {
+                        width: 48 * scale,
+                        height: 48 * scale,
+                        marginBottom: (48 * scale - 48) / 2,
+                        duration: 0.1,
+                        ease: "power2.out"
+                    });
+                    
+                    const svg = item.querySelector('svg');
+                    if (svg) {
+                        gsap.to(svg, {
+                            width: 20 * scale,
+                            height: 20 * scale,
+                            duration: 0.1
+                        });
+                    }
+                });
+            });
+
+            macDock.addEventListener('mouseleave', () => {
+                dockItems.forEach(item => {
+                    gsap.to(item, {
+                        width: 48,
+                        height: 48,
+                        marginBottom: 0,
+                        duration: 0.4,
+                        ease: "elastic.out(1, 0.4)"
+                    });
+                    const svg = item.querySelector('svg');
+                    if (svg) {
+                        gsap.to(svg, {
+                            width: 20,
+                            height: 20,
+                            duration: 0.4,
+                            ease: "elastic.out(1, 0.4)"
+                        });
+                    }
+                });
+            });
         }
 
         /* Initialize Lucide Icons */
