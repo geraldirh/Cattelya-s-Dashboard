@@ -848,6 +848,16 @@ async def chat_orchid(request: ChatRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Terjadi kesalahan pada chatbot: {str(e)}")
 
+@app.delete("/chat-history/{session_id}")
+async def delete_chat_history(session_id: str):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Database tidak tersedia")
+    try:
+        supabase.table("chat_logs").delete().eq("session_id", session_id).execute()
+        return {"status": "success", "message": "Riwayat chat berhasil dihapus"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gagal menghapus riwayat chat: {str(e)}")
+
 @app.get("/recent-chats")
 async def get_recent_chats():
     if not supabase:

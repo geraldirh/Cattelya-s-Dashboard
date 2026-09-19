@@ -405,10 +405,37 @@
             cursor: pointer;
             transition: all 0.2s;
             color: #e2e8f0;
+            background: rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        
+        .recent-item span.title {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            background: rgba(0,0,0,0.2);
+            flex: 1;
+        }
+        
+        .chat-delete-btn {
+            background: transparent;
+            border: none;
+            color: #f87171;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            opacity: 0.6;
+        }
+        .chat-delete-btn:hover {
+            opacity: 1;
+            background: rgba(239, 68, 68, 0.2);
         }
 
         .recent-item:hover {
@@ -3008,16 +3035,52 @@
                     data.data.forEach(chat => {
                         const div = document.createElement('div');
                         div.className = 'recent-item' + (chat.session_id === currentSessionId ? ' active' : '');
-                        div.innerText = chat.title || 'Percakapan';
+                        
+                        const titleSpan = document.createElement('span');
+                        titleSpan.className = 'title';
+                        titleSpan.innerText = chat.title || 'Percakapan';
+                        
+                        const delBtn = document.createElement('button');
+                        delBtn.className = 'chat-delete-btn';
+                        delBtn.title = 'Hapus riwayat';
+                        delBtn.innerHTML = '<i data-lucide="trash-2"></i>';
+                        delBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            deleteChatHistory(chat.session_id);
+                        };
+                        
                         div.onclick = () => loadChatHistory(chat.session_id);
+                        div.appendChild(titleSpan);
+                        div.appendChild(delBtn);
                         list.appendChild(div);
                     });
+                    lucide.createIcons();
                 } else {
                     list.innerHTML = '<div style="text-align:center; color:#94a3b8; font-size:0.85rem; margin-top:20px;">Belum ada riwayat</div>';
                 }
             } catch(e) {
                 console.error("Error loading recent chats:", e);
                 if(list) list.innerHTML = '<div style="text-align:center; color:#94a3b8; font-size:0.85rem; margin-top:20px;">Belum ada riwayat</div>';
+            }
+        }
+
+        async function deleteChatHistory(sessionId) {
+            if(!confirm("Yakin ingin menghapus riwayat chat ini?")) return;
+            try {
+                const res = await fetch(`/chat-history/${sessionId}`, { method: 'DELETE' });
+                const data = await res.json();
+                if(data.status === 'success') {
+                    if (currentSessionId === sessionId) {
+                        resetChat();
+                    } else {
+                        loadRecentChats();
+                    }
+                } else {
+                    alert("Gagal menghapus: " + (data.detail || "Kesalahan server"));
+                }
+            } catch(e) {
+                console.error("Error deleting chat:", e);
+                alert("Terjadi kesalahan saat menghapus chat.");
             }
         }
 
