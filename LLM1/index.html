@@ -135,6 +135,51 @@
             animation-delay: 0.3s;
         }
 
+        .plc-status {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            z-index: 50;
+            transition: all 0.3s ease;
+        }
+
+        .plc-status.online {
+            color: #1b5e20;
+            border: 1px solid rgba(46, 125, 50, 0.4);
+        }
+        
+        .plc-status.online .indicator {
+            background-color: #4ade80;
+            box-shadow: 0 0 8px #4ade80;
+        }
+
+        .plc-status.offline {
+            color: #b91c1c;
+            border: 1px solid rgba(185, 28, 28, 0.4);
+        }
+        
+        .plc-status.offline .indicator {
+            background-color: #ef4444;
+            box-shadow: 0 0 8px #ef4444;
+        }
+
+        .plc-status .indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
         /* ─── MAIN WRAPPER ─────────────────────────────────────── */
         .main-wrapper {
             position: relative;
@@ -2006,6 +2051,9 @@
 
     <!-- ───── HERO ───── -->
     <div class="hero">
+        <div class="plc-status offline" id="plcStatus">
+            <div class="indicator"></div> <span id="plcStatusText">PLC Offline</span>
+        </div>
         <div class="hero-badge"><i data-lucide="leaf"></i> Smart Greenhouse IoT & AI</div>
         <h1 ondblclick="unlockSecretConfig()" style="cursor: pointer;">
             <span class="white">Orchid</span><span class="purple">Care</span>
@@ -3584,6 +3632,23 @@
                 const res = await fetch('/latest-telemetry');
                 if (res.ok) {
                     const data = await res.json();
+
+                    // Cek status koneksi PLC (selisih waktu dalam detik, batas 15s)
+                    const nowSec = Date.now() / 1000;
+                    const lastUpdate = data.last_update || 0;
+                    const isOnline = (nowSec - lastUpdate) < 15;
+                    const plcEl = document.getElementById('plcStatus');
+                    const plcText = document.getElementById('plcStatusText');
+                    
+                    if (plcEl && plcText) {
+                        if (isOnline) {
+                            plcEl.className = 'plc-status online';
+                            plcText.innerText = 'PLC Online';
+                        } else {
+                            plcEl.className = 'plc-status offline';
+                            plcText.innerText = 'PLC Offline';
+                        }
+                    }
 
                     // Lingkungan
                     updateGauge('cAirTemp', 'vAirTemp', data.air_temperature, 15, 45, '°C');
