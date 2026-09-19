@@ -2290,3 +2290,79 @@ body::before {
 :root.dark-theme tr {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+/* === MOBILE RESPONSIVENESS FIXES === */
+@media (max-width: 600px) {
+    .metric-card-title { font-size: 0.75rem !important; }
+    .metric-card-icon { font-size: 1rem !important; }
+    .hero h1 { font-size: 1.8rem !important; }
+    .hero p { font-size: 0.85rem !important; }
+    .chat-bubble { max-width: 95% !important; }
+}
+
+/* === DARK MODE READABILITY FIXES === */
+/* Override specific hardcoded dark text colors in light mode */
+:root.dark-theme .metric-card-title,
+:root.dark-theme .act-title,
+:root.dark-theme .param-label,
+:root.dark-theme .tab-btn.active,
+:root.dark-theme .table-head-row th,
+:root.dark-theme .chat-title,
+:root.dark-theme .chat-markdown-body strong,
+:root.dark-theme .chat-markdown-body h1,
+:root.dark-theme .chat-markdown-body h2,
+:root.dark-theme .chat-markdown-body h3,
+:root.dark-theme .footer,
+:root.dark-theme .hero-badge,
+:root.dark-theme th,
+:root.dark-theme td,
+:root.dark-theme .param-val {
+    color: #f1f5f9 !important;
+}
+
+/* Make SVG icons bright in dark mode */
+:root.dark-theme .metric-card-icon i,
+:root.dark-theme .metric-card-head i,
+:root.dark-theme .act-icon-wrap i,
+:root.dark-theme .tab-btn i,
+:root.dark-theme .hero-badge i,
+:root.dark-theme .chat-header i {
+    color: #f8fafc !important;
+}
+
+/* Dim muted text a bit but keep it readable */
+:root.dark-theme .act-subtitle,
+:root.dark-theme .chat-time {
+    color: #94a3b8 !important;
+}
+
+/* Brighten logo colors */
+:root.dark-theme .hero h1 .green { color: #4ade80 !important; }
+:root.dark-theme .hero h1 .purple { color: #c084fc !important; }
+
+/* Table borders */
+:root.dark-theme .log-table th,
+:root.dark-theme .log-table td {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Input boxes in dark mode */
+:root.dark-theme input,
+:root.dark-theme select,
+:root.dark-theme textarea {
+    background-color: rgba(15, 23, 42, 0.8) !important;
+    color: #f8fafc !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+:root.dark-theme input::placeholder {
+    color: #64748b !important;
+}
+
+/* AI Chat Text visibility */
+:root.dark-theme .chat-bubble.ai {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #f8fafc !important;
+}
+:root.dark-theme .chat-bubble.ai * {
+    color: #f8fafc !important;
+}
