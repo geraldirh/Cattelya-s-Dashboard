@@ -66,6 +66,21 @@ TOPIC_RECEIPT_EXHAUST = os.getenv("TOPIC_RECEIPT_EXHAUST", "inianggrek/control/e
 
 app = FastAPI(title="Orchid Health Diagnosis API")
 
+LOGGING_INTERVAL_SECONDS = 60
+
+class LogIntervalRequest(BaseModel):
+    interval: int
+
+@app.get("/log-interval")
+async def get_log_interval():
+    return {"interval": LOGGING_INTERVAL_SECONDS}
+
+@app.post("/set-log-interval")
+async def set_log_interval(req: LogIntervalRequest):
+    global LOGGING_INTERVAL_SECONDS
+    LOGGING_INTERVAL_SECONDS = req.interval
+    return {"status": "success", "interval": LOGGING_INTERVAL_SECONDS}
+
 # Setup Supabase
 from supabase import create_client, Client
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -253,7 +268,7 @@ def start_mqtt_client():
 
 async def log_telemetry_to_supabase():
     while True:
-        await asyncio.sleep(60) # Log setiap 1 menit
+        await asyncio.sleep(LOGGING_INTERVAL_SECONDS)
         if supabase:
             try:
                 data = {
@@ -708,6 +723,36 @@ async def get_logs():
     return {"status": "success", "logs": sensor_logs}
 
 # Endpoint untuk obrolan interaktif konsultasi anggrek (chatbot terbatas konteks anggrek)
+
+def set_greenhouse_thresholds(
+    suhu_siang: float, 
+    suhu_malam: float, 
+    hum_low: float, 
+    tds_sp: float, 
+    soil_temp: float, 
+    soil_moist: float
+) -> str:
+    """Mengatur atau mengubah nilai batas (threshold) aktuator otomatis (suhu, kelembapan, tds, dll).
+    Panggil fungsi ini secara otomatis JIKA pengguna secara tersurat meminta bantuan untuk mengubah, mengatur, atau menyetel parameter/threshold greenhouse.
+    """
+    global mqtt_client_instance
+    if not mqtt_client_instance:
+        return "Gagal: MQTT Client belum terhubung ke broker."
+    
+    payload_dict = {
+        "Suhu_Siang": suhu_siang,
+        "Suhu_Malam": suhu_malam,
+        "Hum_low": hum_low,
+        "TDS_Sp": tds_sp,
+        "Soil_Temp": soil_temp,
+        "Soil_moist": soil_moist
+    }
+    try:
+        mqtt_client_instance.publish(TOPIC_SP_SENSOR_SUB, json.dumps(payload_dict))
+        return f"Berhasil mengirim pengaturan threshold ke sistem IoT: {json.dumps(payload_dict)}"
+    except Exception as e:
+        return f"Gagal mengatur threshold karena error: {str(e)}"
+
 @app.post("/chat")
 async def chat_orchid(request: ChatRequest):
     # Pastikan API key sudah diatur
@@ -719,20 +764,25 @@ async def chat_orchid(request: ChatRequest):
 
     try:
         # Gunakan system_instruction untuk membatasi ke topik anggrek saja
+        # Injeksi kondisi live
+        live_telemetry_str = json.dumps(latest_telemetry)
+        live_actuator_str = json.dumps(latest_actuators)
+        
         system_instruction = (
-            "Anda adalah Dokter Anggrek AI, pakar botani spesialis tanaman anggrek.\n"
-            "Tugas Anda adalah melayani tanya jawab, konsultasi perawatan, penyakit, hama, pemupukan, "
-            "pembibitan, dan segala hal terkait tanaman anggrek secara ramah dan profesional.\n"
-            "PENTING: Anda hanya boleh menjawab hal-hal yang berkaitan dengan anggrek. "
-            "Jika pengguna menanyakan hal selain anggrek (misalnya politik, pemrograman, resep masakan, topik umum, "
-            "atau tanaman non-anggrek), Anda WAJIB menolaknya dengan sopan menggunakan kalimat: "
-            "'Maaf, saya adalah asisten khusus Dokter Anggrek. Saya hanya melayani konsultasi seputar tanaman anggrek. "
-            "Silakan tanyakan hal apa pun tentang anggrek Anda!' dan jangan berikan jawaban untuk pertanyaan non-anggrek tersebut."
+            "Anda adalah Dokter Anggrek AI, pakar botani spesialis tanaman anggrek terintegrasi dengan sistem IoT Greenhouse.\n\n"
+            f"KONDISI GREENHOUSE SAAT INI (REAL-TIME):\n- Data Sensor: {live_telemetry_str}\n- Status Aktuator: {live_actuator_str}\n\n"
+            "Tugas Anda:\n"
+            "1. Menjawab pertanyaan pengguna tentang anggrek (perawatan, penyakit, hama, pemupukan, dll).\n"
+            "2. Anda BOLEH membaca dan menganalisis KONDISI GREENHOUSE SAAT INI di atas jika pengguna bertanya tentang keadaan greenhouse (contoh: 'Berapa suhu sekarang?', 'Apakah GH aman?').\n"
+            "3. Jika Anda menilai kondisinya tidak wajar (misal suhu >35C atau <20C, kelembapan terlalu rendah), sarankan solusi atau perubahan batas suhu.\n"
+            "4. Jika pengguna meminta Anda untuk menyetel, mengubah, atau menerapkan parameter (misalnya 'atur parameter ke suhu 28', 'bantu setel parameter yang ideal'), Anda memiliki ALAT (Function Calling) bernama `set_greenhouse_thresholds` untuk mengubahnya secara langsung! Eksekusi alat tersebut dengan angka yang tepat untuk Suhu Siang, Suhu Malam, Hum low, TDS, dll sesuai standar anggrek (seperti Phalaenopsis atau Dendrobium) atau sesuai angka permintaan pengguna.\n\n"
+            "PENTING: Anda hanya boleh membahas hal seputar anggrek dan kendali Greenhouse. Tolak pertanyaan di luar itu dengan sopan."
         )
         
         model = genai.GenerativeModel(
             model_name='gemini-3.5-flash-lite',
-            system_instruction=system_instruction
+            system_instruction=system_instruction,
+            tools=[set_greenhouse_thresholds]
         )
         
         # Konversi history ke format API SDK Gemini
@@ -743,7 +793,7 @@ async def chat_orchid(request: ChatRequest):
                 "parts": [msg.content]
             })
             
-        chat = model.start_chat(history=gemini_history)
+        chat = model.start_chat(history=gemini_history, enable_automatic_function_calling=True)
 
         # Siapkan payload pesan (bisa berupa teks saja atau multimodal dengan gambar PIL)
         message_parts = []

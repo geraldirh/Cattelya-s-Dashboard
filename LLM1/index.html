@@ -850,20 +850,24 @@
         /* Param Grid */
         .params-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(12, 1fr);
             gap: 18px;
+        }
+        
+        .col-25 {
+            grid-column: span 3;
         }
 
         .col-33 {
-            grid-column: span 1;
+            grid-column: span 4;
         }
 
         .col-50 {
-            grid-column: span 2;
+            grid-column: span 6;
         }
 
         .col-100 {
-            grid-column: span 3;
+            grid-column: span 12;
         }
 
         /* Weather Card — Centered */
@@ -2186,7 +2190,7 @@
                 <div class="params-grid">
 
                     <!-- Cuaca -->
-                    <div class="weather-card col-33">
+                    <div class="weather-card col-25">
                         <div class="metric-card-head" style="border-bottom:none; margin-bottom:4px;">
                             <span class="metric-card-icon"><i data-lucide="cloud-sun"></i></span>
                             <span class="metric-card-title" style="color:rgba(255,255,255,0.9);">Cuaca Saat Ini</span>
@@ -2208,7 +2212,7 @@
                     </div>
 
                     <!-- Informasi Lingkungan -->
-                    <div class="metric-card col-33">
+                    <div class="metric-card col-25">
                         <div class="metric-card-head">
                             <span class="metric-card-icon"><i data-lucide="leaf"></i></span>
                             <span class="metric-card-title">Informasi Lingkungan</span>
@@ -2241,23 +2245,43 @@
                                 <span class="gauge-lbl">Kelembapan</span>
                             </div>
                         </div>
-                        <!-- Lux Bar -->
-                        <div class="sub-meter-box">
-                            <div class="sub-meter-meta">
-                                <span><i data-lucide="sun"></i> Intensitas Cahaya</span>
-                                <span id="vLux" style="color:#0f172a; font-weight:800;">4500 Lux</span>
+                        <div class="soil-stat-box" style="margin: 0 auto; width: 85%; margin-top: 15px;">
+                            <div class="soil-stat-lbl">Status Iklim</div>
+                            <div class="soil-stat-val" id="iklimStatusText" style="color: var(--primary); font-size: 0.95rem;">Optimal</div>
+                        </div>
+                    </div>
+
+                    <!-- Intensitas Cahaya (Card Baru) -->
+                    <div class="metric-card col-25">
+                        <div class="metric-card-head">
+                            <span class="metric-card-icon"><i data-lucide="sun"></i></span>
+                            <span class="metric-card-title">Intensitas Cahaya</span>
+                        </div>
+                        <div class="gauges-centered-row">
+                            <div class="gauge-item">
+                                <div class="gauge-wrap">
+                                    <svg class="gauge-svg" viewBox="0 0 80 80">
+                                        <circle cx="40" cy="40" r="32" stroke="#f1f5f9" stroke-width="6" fill="none" />
+                                        <circle id="cLuxGauge" cx="40" cy="40" r="32" stroke="#f9a825" stroke-width="6"
+                                            fill="none" stroke-linecap="round" stroke-dasharray="0 201.1"
+                                            style="transition:stroke-dasharray .6s ease" />
+                                    </svg>
+                                    <div class="gauge-val" id="vLux" style="font-size:0.85rem;">4500</div>
+                                </div>
+                                <span class="gauge-lbl">Lux</span>
                             </div>
-                            <div class="sub-meter-track">
-                                <div id="bLux" class="sub-meter-fill" style="width:45%; background:#f9a825;"></div>
-                            </div>
+                        </div>
+                        <div class="soil-stat-box" style="margin: 0 auto; width: 85%; margin-top: 15px;">
+                            <div class="soil-stat-lbl">Status Pencahayaan</div>
+                            <div class="soil-stat-val" id="luxStatusText" style="color: var(--primary); font-size: 0.95rem;">Optimal</div>
                         </div>
                     </div>
 
                     <!-- Informasi Air -->
-                    <div class="metric-card col-33">
+                    <div class="metric-card col-25">
                         <div class="metric-card-head">
                             <span class="metric-card-icon"><i data-lucide="droplet"></i></span>
-                            <span class="metric-card-title">Informasi Air</span>
+                            <span class="metric-card-title">Kualitas Air</span>
                         </div>
                         <div class="gauges-centered-row">
                             <!-- TDS -->
@@ -2273,6 +2297,10 @@
                                 </div>
                                 <span class="gauge-lbl">TDS (ppm)</span>
                             </div>
+                        </div>
+                        <div class="soil-stat-box" style="margin: 0 auto; width: 85%; margin-top: 15px;">
+                            <div class="soil-stat-lbl">Status Kualitas</div>
+                            <div class="soil-stat-val" id="tdsStatusText" style="color: var(--primary); font-size: 0.95rem;">Optimal</div>
                         </div>
                     </div>
 
@@ -3248,10 +3276,22 @@
                 // Update UI manually immediately (will also be polled by fetchRealTimeTelemetry later)
                 updateGauge('cAirTemp', 'vAirTemp', vals.air_temperature, 15, 45, '°C');
                 updateGauge('cAirHumid', 'vAirHumid', vals.air_humidity, 20, 100, '%');
+            let iklimStatEl = document.getElementById('iklimStatusText');
+            if(iklimStatEl) {
+                if(vals.air_temperature >= 20 && vals.air_temperature <= 30 && vals.air_humidity >= 50 && vals.air_humidity <= 85) {
+                    iklimStatEl.innerText = 'Optimal';
+                } else if(vals.air_temperature > 30) {
+                    iklimStatEl.innerText = 'Terlalu Panas';
+                } else {
+                    iklimStatEl.innerText = 'Tidak Ideal';
+                }
+            }
                 updateGauge('cTDS', 'vTDS', vals.tds, 0, 600, '');
+            if(document.getElementById('tdsStatusText')) document.getElementById('tdsStatusText').innerText = vals.tds < 100 ? 'Rendah' : (vals.tds > 400 ? 'Tinggi' : 'Optimal');
 
-                document.getElementById('vLux').innerText = vals.lux + ' Lux';
-                updateBar('bLux', vals.lux, 0, 10000);
+                
+                updateGauge('cLuxGauge', 'vLux', vals.lux, 0, 10000, '');
+            if(document.getElementById('luxStatusText')) document.getElementById('luxStatusText').innerText = vals.lux < 2000 ? 'Redup' : (vals.lux > 8000 ? 'Terik' : 'Optimal');
 
                 setMetricText('vM1Suhu', vals.meja1.suhu, '°C');
                 setMetricText('vM1Humid', vals.meja1.kelembapan, '%');
@@ -3511,7 +3551,7 @@
             // Inisialisasi awal nilai gauge
             updateGauge('cAirTemp', 'vAirTemp', 25.0, 15, 45, '°C');
             updateGauge('cAirHumid', 'vAirHumid', 74, 20, 100, '%');
-            updateBar('bLux', 4500, 0, 10000);
+            updateGauge('cLuxGauge', 'vLux', 4500, 0, 10000, '');
 
             updateGauge('cTDS', 'vTDS', 210, 0, 600, '');
 
@@ -3537,6 +3577,7 @@
             setInterval(fetchRealTimeTelemetry, 3000);
 
             // Cuaca awal dan berkala
+            fetchDatalogInterval();
             fetchWeather();
             setInterval(fetchWeather, 600000);
         });
@@ -3568,12 +3609,25 @@
                     // Lingkungan
                     updateGauge('cAirTemp', 'vAirTemp', data.air_temperature, 15, 45, '°C');
                     updateGauge('cAirHumid', 'vAirHumid', data.air_humidity, 20, 100, '%');
+                let iklimStat = document.getElementById('iklimStatusText');
+                if(iklimStat) {
+                    if(data.air_temperature >= 20 && data.air_temperature <= 30 && data.air_humidity >= 50 && data.air_humidity <= 85) {
+                        iklimStat.innerText = 'Optimal';
+                    } else if(data.air_temperature > 30) {
+                        iklimStat.innerText = 'Terlalu Panas';
+                    } else {
+                        iklimStat.innerText = 'Tidak Ideal';
+                    }
+                }
                     const luxVal = data.lux !== undefined ? data.lux : (data.solar || 4500);
-                    document.getElementById('vLux').innerText = luxVal + ' Lux';
-                    updateBar('bLux', luxVal, 0, 10000);
+                    
+                    updateGauge('cLuxGauge', 'vLux', luxVal, 0, 10000, '');
+                if(document.getElementById('luxStatusText')) document.getElementById('luxStatusText').innerText = luxVal < 2000 ? 'Redup' : (luxVal > 8000 ? 'Terik' : 'Optimal');
 
                     // Air
                     updateGauge('cTDS', 'vTDS', data.tds || 210, 0, 600, '');
+                let tdsVal = data.tds || 210;
+                if(document.getElementById('tdsStatusText')) document.getElementById('tdsStatusText').innerText = tdsVal < 100 ? 'Rendah' : (tdsVal > 400 ? 'Tinggi' : 'Optimal');
 
                     // Meja 1
                     if (data.meja1) {
