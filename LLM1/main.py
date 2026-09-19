@@ -853,8 +853,29 @@ async def delete_chat_history(session_id: str):
     if not supabase:
         raise HTTPException(status_code=500, detail="Database tidak tersedia")
     try:
-        supabase.table("chat_logs").delete().eq("session_id", session_id).execute()
-        return {"status": "success", "message": "Riwayat chat berhasil dihapus"}
+        try:
+            supabase.table("chat_logs").delete().eq("session_id", session_id).execute()
+            return {"status": "success", "message": "Riwayat chat berhasil dihapus"}
+        except Exception:
+            pass
+            
+        res = supabase.table("chat_logs").select("id, message").execute()
+        ids_to_delete = []
+        for row in res.data:
+            msg_raw = row.get("message", "")
+            if msg_raw.startswith('{"sid":'):
+                try:
+                    parsed = json.loads(msg_raw)
+                    if parsed.get("sid") == session_id:
+                        ids_to_delete.append(row["id"])
+                except Exception:
+                    pass
+        
+        if ids_to_delete:
+            for row_id in ids_to_delete:
+                supabase.table("chat_logs").delete().eq("id", row_id).execute()
+                
+        return {"status": "success", "message": "Riwayat chat berhasil dihapus (fallback)"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Gagal menghapus riwayat chat: {str(e)}")
 
