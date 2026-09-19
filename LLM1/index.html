@@ -1674,10 +1674,10 @@
                 gap: 12px;
             }
 
+            .col-25,
             .col-33,
             .col-50,
-            .col-100,
-            .weather-card.col-33 {
+            .col-100 {
                 grid-column: span 1;
             }
 
@@ -1723,8 +1723,9 @@
             }
 
             /* Ensure pyranometer description wraps nicely */
-            .param-card.span2 {
-                grid-column: span 2;
+            .param-card.span2,
+            .span2 {
+                grid-column: span 1;
             }
 
             .param-card.span2>div {
