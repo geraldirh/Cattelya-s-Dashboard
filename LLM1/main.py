@@ -880,14 +880,17 @@ async def delete_chat_history(session_id: str):
         raise HTTPException(status_code=500, detail=f"Gagal menghapus riwayat chat: {str(e)}")
 
 @app.get("/recent-chats")
-async def get_recent_chats():
+async def get_recent_chats(client_id: str = None):
     if not supabase:
         return {"status": "success", "data": []}
     
     try:
         # Coba query dengan kolom session_id jika ada
         try:
-            res = supabase.table("chat_logs").select("session_id, message, created_at").eq("role", "user").order("created_at", desc=False).execute()
+            query = supabase.table("chat_logs").select("session_id, message, created_at").eq("role", "user")
+            if client_id:
+                query = query.like("session_id", f"{client_id}%")
+            res = query.order("created_at", desc=False).execute()
             sessions = {}
             for row in res.data:
                 sid = row.get("session_id")
@@ -926,6 +929,8 @@ async def get_recent_chats():
 
             if sid:
                 # Sesi modern berbasis session_id
+                if client_id and not sid.startswith(client_id):
+                    continue # Lewati jika bukan milik client ini
                 if role == "user" and sid not in sessions:
                     title = text[:32]
                     if len(text) > 32: title += "..."
@@ -935,9 +940,9 @@ async def get_recent_chats():
                         "created_at": created_at
                     }
             else:
-                # Pesan lama legacy tanpa session_id: jangan jadikan tiap balon chat sbg satu session!
-                # Satukan pesan legacy ke dalam 1 sesi arsip 'legacy-session'
-                if role == "user" and "legacy-session" not in sessions:
+                # Pesan lama legacy tanpa session_id
+                if not client_id: # Hanya tampilkan legacy jika client_id tidak difilter (atau untuk retro-compatibility)
+                    if role == "user" and "legacy-session" not in sessions:
                     title = text[:32]
                     if len(text) > 32: title += "..."
                     sessions["legacy-session"] = {

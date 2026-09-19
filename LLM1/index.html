@@ -2796,7 +2796,15 @@
         let chatAttachedImageBase64 = null;
         let logsChart = null;
         let actuatorMode = 'auto';
-        let currentSessionId = crypto.randomUUID();
+        
+        // Persistent Client ID to keep chats isolated per browser
+        let clientId = localStorage.getItem("orchid_client_id");
+        if (!clientId) {
+            clientId = "c_" + crypto.randomUUID().replace(/-/g, '').substring(0, 12);
+            localStorage.setItem("orchid_client_id", clientId);
+        }
+        
+        let currentSessionId = clientId + "_" + crypto.randomUUID();
         let chatHistory = [];
         let currentActuators = { exhaust_fan: 0, penyiraman_air: 0, penyiraman_pupuk: 0, mist_ruangan: 0 };
 
@@ -3030,7 +3038,7 @@
         async function loadRecentChats() {
             const list = document.getElementById('recentChatsList');
             try {
-                const res = await fetch('/recent-chats');
+                const res = await fetch('/recent-chats?client_id=' + encodeURIComponent(clientId));
                 const data = await res.json();
                 if(data.status === 'success' && Array.isArray(data.data)) {
                     list.innerHTML = '';
@@ -3123,7 +3131,7 @@
         }
 
         function createNewChat() {
-            currentSessionId = crypto.randomUUID();
+            currentSessionId = clientId + "_" + crypto.randomUUID();
             chatHistory = [];
             clearChatImageAttachment();
             resetChatUI();
