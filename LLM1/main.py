@@ -267,39 +267,46 @@ def start_mqtt_client():
         print(f"Error connecting to MQTT: {e}")
 
 async def log_telemetry_to_supabase():
+    last_logged_time = 0
     while True:
         await asyncio.sleep(LOGGING_INTERVAL_SECONDS)
         if supabase:
             try:
-                data = {
-                    "air_temperature": latest_telemetry.get("air_temperature"),
-                    "air_humidity": latest_telemetry.get("air_humidity"),
-                    "lux": latest_telemetry.get("lux"),
-                    "tds": latest_telemetry.get("tds"),
-                    "m1_suhu": latest_telemetry.get("meja1", {}).get("suhu"),
-                    "m1_humid": latest_telemetry.get("meja1", {}).get("kelembapan"),
-                    "m1_ec": latest_telemetry.get("meja1", {}).get("ec"),
-                    "m1_ph": latest_telemetry.get("meja1", {}).get("ph"),
-                    "m2_suhu": latest_telemetry.get("meja2", {}).get("suhu"),
-                    "m2_humid": latest_telemetry.get("meja2", {}).get("kelembapan"),
-                    "m2_ec": latest_telemetry.get("meja2", {}).get("ec"),
-                    "m2_ph": latest_telemetry.get("meja2", {}).get("ph"),
-                    "m3_suhu": latest_telemetry.get("meja3", {}).get("suhu"),
-                    "m3_humid": latest_telemetry.get("meja3", {}).get("kelembapan"),
-                    "m3_ec": latest_telemetry.get("meja3", {}).get("ec"),
-                    "m3_ph": latest_telemetry.get("meja3", {}).get("ph")
-                }
-                supabase.table("sensor_logs").insert(data).execute()
-                
-                # Log aktuator ke tabel terpisah
-                actuator_data = {
-                    "exhaust_fan": latest_actuators.get("exhaust_fan", 0),
-                    "penyiraman_air": latest_actuators.get("penyiraman_air", 0),
-                    "penyiraman_pupuk": latest_actuators.get("penyiraman_pupuk", 0),
-                    "mist_ruangan": latest_actuators.get("mist_ruangan", 0),
-                    "mode": latest_actuators.get("mode", "auto")
-                }
-                supabase.table("actuator_logs").insert(actuator_data).execute()
+                current_update = latest_telemetry.get("last_update", 0)
+                # Hanya simpan jika ada data MQTT baru sejak log terakhir
+                if current_update > last_logged_time:
+                    data = {
+                        "air_temperature": latest_telemetry.get("air_temperature"),
+                        "air_humidity": latest_telemetry.get("air_humidity"),
+                        "lux": latest_telemetry.get("lux"),
+                        "tds": latest_telemetry.get("tds"),
+                        "m1_suhu": latest_telemetry.get("meja1", {}).get("suhu"),
+                        "m1_humid": latest_telemetry.get("meja1", {}).get("kelembapan"),
+                        "m1_ec": latest_telemetry.get("meja1", {}).get("ec"),
+                        "m1_ph": latest_telemetry.get("meja1", {}).get("ph"),
+                        "m2_suhu": latest_telemetry.get("meja2", {}).get("suhu"),
+                        "m2_humid": latest_telemetry.get("meja2", {}).get("kelembapan"),
+                        "m2_ec": latest_telemetry.get("meja2", {}).get("ec"),
+                        "m2_ph": latest_telemetry.get("meja2", {}).get("ph"),
+                        "m3_suhu": latest_telemetry.get("meja3", {}).get("suhu"),
+                        "m3_humid": latest_telemetry.get("meja3", {}).get("kelembapan"),
+                        "m3_ec": latest_telemetry.get("meja3", {}).get("ec"),
+                        "m3_ph": latest_telemetry.get("meja3", {}).get("ph")
+                    }
+                    supabase.table("sensor_logs").insert(data).execute()
+                    
+                    # Log aktuator ke tabel terpisah
+                    actuator_data = {
+                        "exhaust_fan": latest_actuators.get("exhaust_fan", 0),
+                        "penyiraman_air": latest_actuators.get("penyiraman_air", 0),
+                        "penyiraman_pupuk": latest_actuators.get("penyiraman_pupuk", 0),
+                        "mist_ruangan": latest_actuators.get("mist_ruangan", 0),
+                        "mode": latest_actuators.get("mode", "auto")
+                    }
+                    supabase.table("actuator_logs").insert(actuator_data).execute()
+                    
+                    # Perbarui last_logged_time
+                    last_logged_time = current_update
                 
             except Exception as e:
                 print(f"Error logging telemetry to Supabase: {e}")
