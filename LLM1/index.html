@@ -177,6 +177,13 @@
         .plc-status.online .indicator {
             background-color: #4ade80;
             box-shadow: 0 0 8px #4ade80;
+            animation: pulseOnline 2s infinite;
+        }
+
+        @keyframes pulseOnline {
+            0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(74, 222, 128, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
         }
 
         .plc-status.offline {
@@ -187,6 +194,13 @@
         .plc-status.offline .indicator {
             background-color: #ef4444;
             box-shadow: 0 0 8px #ef4444;
+            animation: pulseOffline 1.5s infinite;
+        }
+
+        @keyframes pulseOffline {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
 
         .plc-status .indicator {
