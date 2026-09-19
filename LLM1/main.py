@@ -943,13 +943,13 @@ async def get_recent_chats(client_id: str = None):
                 # Pesan lama legacy tanpa session_id
                 if not client_id: # Hanya tampilkan legacy jika client_id tidak difilter (atau untuk retro-compatibility)
                     if role == "user" and "legacy-session" not in sessions:
-                    title = text[:32]
-                    if len(text) > 32: title += "..."
-                    sessions["legacy-session"] = {
-                        "session_id": "legacy-session",
-                        "title": title,
-                        "created_at": created_at
-                    }
+                        title = text[:32]
+                        if len(text) > 32: title += "..."
+                        sessions["legacy-session"] = {
+                            "session_id": "legacy-session",
+                            "title": title,
+                            "created_at": created_at
+                        }
 
         sorted_sessions = sorted(list(sessions.values()), key=lambda x: x.get("created_at", ""), reverse=True)
         return {"status": "success", "data": sorted_sessions}
