@@ -403,7 +403,7 @@
             showTypingIndicator();
 
             try {
-                const res = await fetch('/chat', {
+                const res = await fetch('/chat-stream', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -413,14 +413,47 @@
                         history: chatHistory
                     })
                 });
-                const data = await res.json();
                 removeTypingIndicator();
-                if (!res.ok) throw new Error(data.detail || 'Error server');
-                appendBubble('ai', fmtMD(data.response));
-
+                if (!res.ok) throw new Error('Error server');
+                
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder("utf-8");
+                let done = false;
+                let fullText = "";
+                
+                // Create empty AI bubble
+                const el = document.createElement('div');
+                el.className = 'chat-bubble ai';
+                const msgs = document.getElementById('chatMessages');
+                msgs.appendChild(el);
+                msgs.scrollTop = msgs.scrollHeight;
+                
+                while (!done) {
+                    const { value, done: readerDone } = await reader.read();
+                    done = readerDone;
+                    if (value) {
+                        const chunkStr = decoder.decode(value, { stream: true });
+                        const lines = chunkStr.split('\n');
+                        for (let line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const dataStr = line.substring(6);
+                                if (dataStr === '[DONE]') break;
+                                try {
+                                    const data = JSON.parse(dataStr);
+                                    if (data.error) throw new Error(data.error);
+                                    fullText += data.chunk;
+                                    const parsedHtml = (typeof marked !== 'undefined') ? marked.parse(fullText) : fullText;
+                                    el.innerHTML = `<div class="chat-markdown-body">${parsedHtml}</div>`;
+                                    msgs.scrollTop = msgs.scrollHeight;
+                                } catch(e) {}
+                            }
+                        }
+                    }
+                }
+                
                 const historyUserMsg = msg ? (attachedImg ? `${msg} [Foto terlampir]` : msg) : '[Melampirkan foto anggrek]';
                 chatHistory.push({ role: 'user', content: historyUserMsg });
-                chatHistory.push({ role: 'model', content: data.response });
+                chatHistory.push({ role: 'model', content: fullText });
                 loadRecentChats(); // Refresh daftar riwayat chat di sidebar
             } catch (err) {
                 removeTypingIndicator();
@@ -824,7 +857,7 @@
             updateGauge('cM3pH', 'vM3pH', 6.7, 0, 14, '');
 
             // Polling telemetry real-time
-            setInterval(fetchRealTimeTelemetry, 3000);
+            setInterval(fetchRealTimeTelemetry, 30000);
 
             // Cuaca awal dan berkala
             fetchDatalogInterval();
