@@ -1,9 +1,9 @@
 /* ── State ──────────────────────────────────── */
         let chatAttachedImageBase64 = null;
-        let logsChart = null;
+        let logs&deg;Chart = null;
         let actuatorMode = 'auto';
 
-        // Persistent Client ID to keep chats isolated per browser
+        // Persistent &deg;Client ID to keep chats isolated per browser
         let clientId = localStorage.getItem("orchid_client_id");
         if (!clientId) {
             clientId = "c_" + crypto.randomUUID().replace(/-/g, '').substring(0, 12);
@@ -16,7 +16,7 @@
 
         /* ── Mobile Hamburger Menu Toggle ───────────── */
 
-        function toggleChatSidebar() {
+        function toggle&deg;ChatSidebar() {
             const sidebar = document.getElementById('recentSidebar');
             if (sidebar) sidebar.classList.toggle('open');
         }
@@ -102,7 +102,7 @@
             try {
                 await fetch('/control-actuator', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { '&deg;Content-Type': 'application/json' },
                     body: JSON.stringify({ device: 'mode_switch', state: mode === 'manual' ? 1 : 0, payload_data: payload })
                 });
             } catch (err) {
@@ -137,7 +137,7 @@
                 };
                 await fetch('/control-actuator', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { '&deg;Content-Type': 'application/json' },
                     body: JSON.stringify({ device: act, state: state, payload_data: payload })
                 });
 
@@ -174,8 +174,8 @@
             }
         }
 
-        /* ── File Upload / Image Attachment in Chat ── */
-        function handleChatFileSelect(e) {
+        /* ── File Upload / Image Attachment in &deg;Chat ── */
+        function handle&deg;ChatFileSelect(e) {
             const file = e.target.files && e.target.files[0];
             if (!file) return;
             if (!file.type.match('image.*')) {
@@ -195,7 +195,7 @@
             reader.readAsDataURL(file);
         }
 
-        function clearChatImageAttachment() {
+        function clear&deg;ChatImageAttachment() {
             chatAttachedImageBase64 = null;
             const fileInput = document.getElementById('chatFileInput');
             if (fileInput) fileInput.value = '';
@@ -210,7 +210,7 @@
             return t.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
         }
 
-        /* ── Chat bubble helper & Typing Indicator ─── */
+        /* ── &deg;Chat bubble helper & Typing Indicator ─── */
         function appendBubble(role, html, imageSrc = null) {
             const el = document.createElement('div');
             el.className = 'chat-bubble ' + (role === 'user' ? 'user' : 'ai');
@@ -226,7 +226,7 @@
             el.innerHTML = contentHtml;
 
             const msgs = document.getElementById('chatMessages');
-            msgs.appendChild(el);
+            msgs.append&deg;Child(el);
             msgs.scrollTop = msgs.scrollHeight;
         }
 
@@ -241,7 +241,7 @@
                 <span class="typing-dot"></span>
                 <span class="typing-dot"></span>
             `;
-            msgs.appendChild(typingEl);
+            msgs.append&deg;Child(typingEl);
             msgs.scrollTop = msgs.scrollHeight;
         }
 
@@ -250,10 +250,10 @@
             if (typingEl) typingEl.remove();
         }
 
-        async function loadRecentChats() {
-            const list = document.getElementById('recentChatsList');
+        async function loadRecent&deg;Chats() {
+            const list = document.getElementById('recent&deg;ChatsList');
             try {
-                const res = await fetch('/recent-chats?client_id=' + encodeURIComponent(clientId));
+                const res = await fetch('/recent-chats?client_id=' + encodeURI&deg;Component(clientId));
                 const data = await res.json();
                 if (data.status === 'success' && Array.isArray(data.data)) {
                     list.innerHTML = '';
@@ -275,13 +275,13 @@
                         delBtn.innerHTML = '<i data-lucide="trash-2"></i>';
                         delBtn.onclick = (e) => {
                             e.stopPropagation();
-                            deleteChatHistory(chat.session_id);
+                            delete&deg;ChatHistory(chat.session_id);
                         };
 
-                        div.onclick = () => loadChatHistory(chat.session_id);
-                        div.appendChild(titleSpan);
-                        div.appendChild(delBtn);
-                        list.appendChild(div);
+                        div.onclick = () => load&deg;ChatHistory(chat.session_id);
+                        div.append&deg;Child(titleSpan);
+                        div.append&deg;Child(delBtn);
+                        list.append&deg;Child(div);
                     });
                     lucide.createIcons();
                 } else {
@@ -293,25 +293,25 @@
             }
         }
 
-        async function deleteChatHistory(sessionId) {
+        async function delete&deg;ChatHistory(sessionId) {
             const result = await Swal.fire({
                 title: 'Yakin ingin menghapus?',
                 text: "Riwayat chat ini tidak dapat dikembalikan!",
                 icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#94a3b8',
+                show&deg;CancelButton: true,
+                confirmButton&deg;Color: '#ef4444',
+                cancelButton&deg;Color: '#94a3b8',
                 confirmButtonText: 'Ya, hapus!'
             });
-            if (!result.isConfirmed) return;
+            if (!result.is&deg;Confirmed) return;
             try {
                 const res = await fetch(`/chat-history/${sessionId}`, { method: 'DELETE' });
                 const data = await res.json();
                 if (data.status === 'success') {
                     if (currentSessionId === sessionId) {
-                        resetChat();
+                        reset&deg;Chat();
                     } else {
-                        loadRecentChats();
+                        loadRecent&deg;Chats();
                     }
                 } else {
                     Swal.fire('Gagal', data.detail || "Kesalahan server", 'error');
@@ -322,14 +322,14 @@
             }
         }
 
-        async function loadChatHistory(sessionId) {
+        async function load&deg;ChatHistory(sessionId) {
             currentSessionId = sessionId;
             chatHistory = [];
-            clearChatImageAttachment();
+            clear&deg;ChatImageAttachment();
 
             // Tandai item aktif di sidebar
             document.querySelectorAll('.recent-item').forEach(el => el.classList.remove('active'));
-            loadRecentChats();
+            loadRecent&deg;Chats();
 
             document.getElementById('chatMessages').innerHTML = '<div style="text-align:center; color:#94a3b8; font-size:0.85rem; margin-top:20px;">Memuat riwayat chat...</div>';
             try {
@@ -338,7 +338,7 @@
                 if (data.status === 'success') {
                     document.getElementById('chatMessages').innerHTML = '';
                     if (!data.data || data.data.length === 0) {
-                        resetChatUI();
+                        reset&deg;ChatUI();
                         return;
                     }
                     data.data.forEach(msg => {
@@ -346,25 +346,25 @@
                         chatHistory.push({ role: msg.role, content: msg.message });
                     });
                 } else {
-                    resetChatUI();
+                    reset&deg;ChatUI();
                 }
             } catch (e) {
                 console.error("Error loading chat history:", e);
-                resetChatUI();
+                reset&deg;ChatUI();
             }
         }
 
-        function createNewChat() {
+        function createNew&deg;Chat() {
             currentSessionId = clientId + "_" + crypto.randomUUID();
             chatHistory = [];
-            clearChatImageAttachment();
-            resetChatUI();
-            loadRecentChats();
+            clear&deg;ChatImageAttachment();
+            reset&deg;ChatUI();
+            loadRecent&deg;Chats();
             const input = document.getElementById('chatInputField');
             if (input) input.focus();
         }
 
-        function resetChatUI() {
+        function reset&deg;ChatUI() {
             document.getElementById('chatMessages').innerHTML = `
                 <div class="chat-bubble ai">
                     Halo! Saya <b>Dokter Anggrek AI</b> <i data-lucide="flower"></i><br><br>
@@ -375,10 +375,10 @@
                     • Konsultasi anggrek lainnya<br><br>
                     Ketik pertanyaan atau klik ikon <b><i data-lucide="paperclip"></i> Foto</b> untuk melampirkan gambar anggrek Anda! <i data-lucide="stethoscope"></i>
                 </div>`;
-            clearChatImageAttachment();
+            clear&deg;ChatImageAttachment();
         }
 
-        async function sendChatMessage() {
+        async function send&deg;ChatMessage() {
             const input = document.getElementById('chatInputField');
             const btn = document.getElementById('chatSendBtn');
             const attachBtn = document.getElementById('chatAttachBtn');
@@ -393,7 +393,7 @@
 
             // Bersihkan input dan pratinjau lampiran
             input.value = '';
-            clearChatImageAttachment();
+            clear&deg;ChatImageAttachment();
 
             // Kunci input saat menunggu respon
             input.disabled = true;
@@ -405,7 +405,7 @@
             try {
                 const res = await fetch('/chat', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { '&deg;Content-Type': 'application/json' },
                     body: JSON.stringify({
                         session_id: currentSessionId,
                         message: msg,
@@ -421,7 +421,7 @@
                 const el = document.createElement('div');
                 el.className = 'chat-bubble ai chat-markdown-body';
                 const msgs = document.getElementById('chatMessages');
-                msgs.appendChild(el);
+                msgs.append&deg;Child(el);
                 
                 // Frontend Typewriter Effect
                 let i = 0;
@@ -439,7 +439,7 @@
                 const historyUserMsg = msg ? (attachedImg ? `${msg} [Foto terlampir]` : msg) : '[Melampirkan foto anggrek]';
                 chatHistory.push({ role: 'user', content: historyUserMsg });
                 chatHistory.push({ role: 'model', content: responseText });
-                loadRecentChats(); // Refresh daftar riwayat chat di sidebar
+                loadRecent&deg;Chats(); // Refresh daftar riwayat chat di sidebar
             } catch (err) {
                 removeTypingIndicator();
                 appendBubble('ai', '<i data-lucide="alert-triangle"></i> Gagal mendapatkan respon: ' + err.message);
@@ -452,16 +452,16 @@
             }
         }
 
-        async function resetChat() {
+        async function reset&deg;Chat() {
             const result = await Swal.fire({
                 title: 'Mulai obrolan baru?',
                 icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#2e7d32',
+                show&deg;CancelButton: true,
+                confirmButton&deg;Color: '#2e7d32',
                 confirmButtonText: 'Ya, mulai'
             });
-            if (!result.isConfirmed) return;
-            createNewChat();
+            if (!result.is&deg;Confirmed) return;
+            createNew&deg;Chat();
         }
 
         /* ── Metrics to Backend ─────────────────────── */
@@ -474,19 +474,19 @@
                 meja1: {
                     suhu: parseFloat(document.getElementById('simM1Suhu').value),
                     kelembapan: parseFloat(document.getElementById('simM1Humid').value),
-                    ec: parseFloat(document.getElementById('simM1EC').value),
+                    ec: parseFloat(document.getElementById('simM1E&deg;C').value),
                     ph: parseFloat(document.getElementById('simM1pH').value)
                 },
                 meja2: {
                     suhu: parseFloat(document.getElementById('simM2Suhu').value),
                     kelembapan: parseFloat(document.getElementById('simM2Humid').value),
-                    ec: parseFloat(document.getElementById('simM2EC').value),
+                    ec: parseFloat(document.getElementById('simM2E&deg;C').value),
                     ph: parseFloat(document.getElementById('simM2pH').value)
                 },
                 meja3: {
                     suhu: parseFloat(document.getElementById('simM3Suhu').value),
                     kelembapan: parseFloat(document.getElementById('simM3Humid').value),
-                    ec: parseFloat(document.getElementById('simM3EC').value),
+                    ec: parseFloat(document.getElementById('simM3E&deg;C').value),
                     ph: parseFloat(document.getElementById('simM3pH').value)
                 }
             };
@@ -497,12 +497,12 @@
             const payload = { ...vals, mode: actuatorMode, manual_actions: actuatorMode === 'manual' ? currentActuators : null };
 
             try {
-                const res = await fetch('/analyze-metrics', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const res = await fetch('/analyze-metrics', { method: 'POST', headers: { '&deg;Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.detail || 'Error');
 
                 // Update UI manually immediately (will also be polled by fetchRealTimeTelemetry later)
-                updateGauge('cAirTemp', 'vAirTemp', vals.air_temperature, 15, 45, '°C');
+                updateGauge('cAirTemp', 'vAirTemp', vals.air_temperature, 15, 45, '°&deg;C');
                 updateGauge('cAirHumid', 'vAirHumid', vals.air_humidity, 20, 100, '%');
                 let iklimStatEl = document.getElementById('iklimStatusText');
                 if (iklimStatEl) {
@@ -521,19 +521,19 @@
                 updateGauge('cLuxGauge', 'vLux', vals.lux, 0, 10000, '');
                 if (document.getElementById('luxStatusText')) document.getElementById('luxStatusText').innerText = vals.lux < 2000 ? 'Redup' : (vals.lux > 8000 ? 'Terik' : 'Optimal');
 
-                setMetricText('vM1Suhu', vals.meja1.suhu, '°C');
+                setMetricText('vM1Suhu', vals.meja1.suhu, '°&deg;C');
                 setMetricText('vM1Humid', vals.meja1.kelembapan, '%');
-                updateGauge('cM1EC', 'vM1EC', vals.meja1.ec, 0, 15, '');
+                updateGauge('cM1E&deg;C', 'vM1E&deg;C', vals.meja1.ec, 0, 15, '');
                 updateGauge('cM1pH', 'vM1pH', vals.meja1.ph, 0, 14, '');
 
-                setMetricText('vM2Suhu', vals.meja2.suhu, '°C');
+                setMetricText('vM2Suhu', vals.meja2.suhu, '°&deg;C');
                 setMetricText('vM2Humid', vals.meja2.kelembapan, '%');
-                updateGauge('cM2EC', 'vM2EC', vals.meja2.ec, 0, 15, '');
+                updateGauge('cM2E&deg;C', 'vM2E&deg;C', vals.meja2.ec, 0, 15, '');
                 updateGauge('cM2pH', 'vM2pH', vals.meja2.ph, 0, 14, '');
 
-                setMetricText('vM3Suhu', vals.meja3.suhu, '°C');
+                setMetricText('vM3Suhu', vals.meja3.suhu, '°&deg;C');
                 setMetricText('vM3Humid', vals.meja3.kelembapan, '%');
-                updateGauge('cM3EC', 'vM3EC', vals.meja3.ec, 0, 15, '');
+                updateGauge('cM3E&deg;C', 'vM3E&deg;C', vals.meja3.ec, 0, 15, '');
                 updateGauge('cM3pH', 'vM3pH', vals.meja3.ph, 0, 14, '');
 
                 // AI summary
@@ -602,21 +602,21 @@
                         penyiraman_pupuk: '-',
                         mist_ruangan: '-'
                     };
-                    const onColor = (v, c) => v === 1 ? `color:${c};font-weight:bold` : ''
+                    const on&deg;Color = (v, c) => v === 1 ? `color:${c};font-weight:bold` : ''
                     tr.innerHTML = `
                 <td><b>${log.timestamp || '-'}</b></td>
-                <td>${log.air_temperature != null ? log.air_temperature + '°C' : '-'}</td>
+                <td>${log.air_temperature != null ? log.air_temperature + '°&deg;C' : '-'}</td>
                 <td>${log.air_humidity != null ? log.air_humidity + '%' : '-'}</td>
                 <td>${log.lux != null ? log.lux + ' Lux' : '-'}</td>
                 <td>${log.tds != null ? log.tds + ' ppm' : '-'}</td>
                 <td>${log.meja1?.kelembapan != null ? log.meja1.kelembapan + '%' : '-'}</td>
                 <td>${log.meja2?.kelembapan != null ? log.meja2.kelembapan + '%' : '-'}</td>
                 <td>${log.meja3?.kelembapan != null ? log.meja3.kelembapan + '%' : '-'}</td>
-                <td><span style="${onColor(actions.exhaust_fan, 'var(--primary)')}">${actions.exhaust_fan}</span></td>
-                <td><span style="${onColor(actions.penyiraman_air, 'var(--info)')}">${actions.penyiraman_air}</span></td>
-                <td><span style="${onColor(actions.penyiraman_pupuk, 'var(--accent)')}">${actions.penyiraman_pupuk}</span></td>
-                <td><span style="${onColor(actions.mist_ruangan, 'var(--info)')}">${actions.mist_ruangan}</span></td>`;
-                    tbody.appendChild(tr);
+                <td><span style="${on&deg;Color(actions.exhaust_fan, 'var(--primary)')}">${actions.exhaust_fan}</span></td>
+                <td><span style="${on&deg;Color(actions.penyiraman_air, 'var(--info)')}">${actions.penyiraman_air}</span></td>
+                <td><span style="${on&deg;Color(actions.penyiraman_pupuk, 'var(--accent)')}">${actions.penyiraman_pupuk}</span></td>
+                <td><span style="${on&deg;Color(actions.mist_ruangan, 'var(--info)')}">${actions.mist_ruangan}</span></td>`;
+                    tbody.append&deg;Child(tr);
                     
                     if (typeof gsap !== 'undefined') {
                         gsap.to(tr, { opacity: 1, y: 0, duration: 0.3, delay: idx * 0.05, ease: "power2.out" });
@@ -627,11 +627,11 @@
                 });
 
                 const labels = logs.map(l => l.timestamp.includes(' ') ? l.timestamp.split(' ')[1] : l.timestamp);
-                if (logsChart) logsChart.destroy();
+                if (logs&deg;Chart) logs&deg;Chart.destroy();
                 
                 const options = {
                     series: [{
-                        name: 'Suhu Udara (°C)',
+                        name: 'Suhu Udara (°&deg;C)',
                         data: logs.map(l => l.air_temperature || 0)
                     }, {
                         name: 'Humid Udara (%)',
@@ -663,7 +663,7 @@
                         axisTicks: { show: false }
                     },
                     yaxis: [
-                        { seriesName: 'Suhu Udara (°C)', labels: { style: { colors: '#94a3b8' } } },
+                        { seriesName: 'Suhu Udara (°&deg;C)', labels: { style: { colors: '#94a3b8' } } },
                         { seriesName: 'Humid Udara (%)', opposite: true, labels: { style: { colors: '#94a3b8' } } },
                         { seriesName: 'Humid Tanah M1 (%)', show: false }
                     ],
@@ -671,12 +671,12 @@
                     tooltip: { theme: 'light' }
                 };
 
-                logsChart = new ApexCharts(document.querySelector("#logsChart"), options);
-                logsChart.render();
+                logs&deg;Chart = new Apex&deg;Charts(document.querySelector("#logs&deg;Chart"), options);
+                logs&deg;Chart.render();
             } catch (e) { console.error('Logger error:', e); }
         }
 
-        function unlockSecretConfig() {
+        function unlockSecret&deg;Config() {
             const btn = document.getElementById('tabBtn-simconfig');
             if (btn.style.display === 'none') {
                 btn.style.display = 'inline-block';
@@ -687,7 +687,7 @@
             }
         }
 
-        async function sendThresholdsToPLC() {
+        async function sendThresholdsToPL&deg;C() {
             const loader = document.getElementById('greenhouseLoader');
             loader.classList.add('active');
 
@@ -723,22 +723,22 @@
             try {
                 const res1 = await fetch('/setpoint/sensor', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { '&deg;Content-Type': 'application/json' },
                     body: JSON.stringify(payloadSensor)
                 });
                 const res2 = await fetch('/setpoint/durasi', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { '&deg;Content-Type': 'application/json' },
                     body: JSON.stringify(payloadDurasi)
                 });
                 const res3 = await fetch('/setpoint/nutrisi', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { '&deg;Content-Type': 'application/json' },
                     body: JSON.stringify(payloadNutrisi)
                 });
 
                 if (res1.ok && res2.ok && res3.ok) {
-                    Swal.fire('Berhasil', 'Semua setpoint berhasil dikirim ke PLC via MQTT!', 'success');
+                    Swal.fire('Berhasil', 'Semua setpoint berhasil dikirim ke PL&deg;C via MQTT!', 'success');
                 } else {
                     Swal.fire('Gagal', 'Gagal mengirim salah satu atau lebih setpoint. Periksa log backend.', 'error');
                 }
@@ -750,7 +750,7 @@
         }
 
         /* ── Gauge & Meter Helpers ─────────────────── */
-        const GAUGE_CIRCUMFERENCE = 201.06; // 2 * PI * 32
+        const GAUGE_&deg;CIR&deg;CUMFEREN&deg;CE = 201.06; // 2 * PI * 32
 
         function setMetricText(id, value, unit) {
             const el = document.getElementById(id);
@@ -797,8 +797,8 @@
             if (circle && !isNaN(num)) {
                 const clamped = Math.min(Math.max(num, min), max);
                 const percent = (clamped - min) / (max - min);
-                const strokeDash = (percent * GAUGE_CIRCUMFERENCE).toFixed(1);
-                circle.style.strokeDasharray = `${strokeDash} ${GAUGE_CIRCUMFERENCE}`;
+                const strokeDash = (percent * GAUGE_&deg;CIR&deg;CUMFEREN&deg;CE).toFixed(1);
+                circle.style.strokeDasharray = `${strokeDash} ${GAUGE_&deg;CIR&deg;CUMFEREN&deg;CE}`;
             }
         }
 
@@ -812,59 +812,65 @@
             }
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOM&deg;ContentLoaded', () => {
             // Render recent chats
-            loadRecentChats();
+            loadRecent&deg;Chats();
 
             // Inisialisasi awal nilai gauge
-            updateGauge('cAirTemp', 'vAirTemp', 25.0, 15, 45, '°C');
+            updateGauge('cAirTemp', 'vAirTemp', 25.0, 15, 45, '°&deg;C');
             updateGauge('cAirHumid', 'vAirHumid', 74, 20, 100, '%');
             updateGauge('cLuxGauge', 'vLux', 4500, 0, 10000, '');
 
             updateGauge('cTDS', 'vTDS', 210, 0, 600, '');
 
-            // Default Meja 1 (Suhu & Moisture text, EC & pH gauge)
-            setMetricText('vM1Suhu', 23.5, '°C');
+            // Default Meja 1 (Suhu & Moisture text, E&deg;C & pH gauge)
+            setMetricText('vM1Suhu', 23.5, '°&deg;C');
             setMetricText('vM1Humid', 71, '%');
-            updateGauge('cM1EC', 'vM1EC', 1.20, 0, 15, '');
+            updateGauge('cM1E&deg;C', 'vM1E&deg;C', 1.20, 0, 15, '');
             updateGauge('cM1pH', 'vM1pH', 6.5, 0, 14, '');
 
             // Default Meja 2
-            setMetricText('vM2Suhu', 23.8, '°C');
+            setMetricText('vM2Suhu', 23.8, '°&deg;C');
             setMetricText('vM2Humid', 68, '%');
-            updateGauge('cM2EC', 'vM2EC', 1.10, 0, 15, '');
+            updateGauge('cM2E&deg;C', 'vM2E&deg;C', 1.10, 0, 15, '');
             updateGauge('cM2pH', 'vM2pH', 6.2, 0, 14, '');
 
             // Default Meja 3
-            setMetricText('vM3Suhu', 24.1, '°C');
+            setMetricText('vM3Suhu', 24.1, '°&deg;C');
             setMetricText('vM3Humid', 75, '%');
-            updateGauge('cM3EC', 'vM3EC', 1.40, 0, 15, '');
+            updateGauge('cM3E&deg;C', 'vM3E&deg;C', 1.40, 0, 15, '');
             updateGauge('cM3pH', 'vM3pH', 6.7, 0, 14, '');
 
             // Polling telemetry real-time
             setInterval(fetchRealTimeTelemetry, 30000);
 
-            // Cuaca awal dan berkala
+            // &deg;Cuaca awal dan berkala
             fetchDatalogInterval();
             fetchWeather();
             setInterval(fetchWeather, 600000);
         });
 
-        async function fetchWeather() {
+                async function fetchWeather() {
             try {
+                // Gunakan lokasi tetap (Bandung) untuk Greenhouse IoT (Lebih cepat & tidak di-block AdBlocker)
                 const lat = -6.9147;
                 const lon = 107.6098;
+                
                 const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m`);
                 if (res.ok) {
                     const data = await res.json();
                     const current = data.current;
-                    document.getElementById('wTemp').innerHTML = '<i data-lucide="thermometer"></i> ' + current.temperature_2m + '°C';
+                    document.getElementById('wTemp').innerHTML = '<i data-lucide="thermometer"></i> ' + current.temperature_2m + '&deg;&deg;C';
                     document.getElementById('wWind').innerHTML = '<i data-lucide="wind"></i> ' + current.wind_speed_10m + ' km/h';
                     document.getElementById('wHumid').innerHTML = '<i data-lucide="droplet"></i> ' + current.relative_humidity_2m + '%';
-                    lucide.createIcons();
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                } else {
+                    console.error("Open-Meteo Error:", res.status);
+                    document.getElementById('wTemp').innerHTML = '<i data-lucide="alert-triangle"></i> Err';
                 }
             } catch (e) {
                 console.error("Gagal mengambil data cuaca", e);
+                document.getElementById('wTemp').innerHTML = '<i data-lucide="wifi-off"></i> Err';
             }
         }
 
@@ -874,7 +880,7 @@
                 if (res.ok) {
                     const data = await res.json();
 
-                    // Cek status koneksi PLC (selisih waktu dalam detik, batas 15s)
+                    // &deg;Cek status koneksi PL&deg;C (selisih waktu dalam detik, batas 15s)
                     const nowSec = Date.now() / 1000;
                     const lastUpdate = data.last_update || 0;
                     const isOnline = (nowSec - lastUpdate) < 15;
@@ -884,15 +890,15 @@
                     if (plcEl && plcText) {
                         if (isOnline) {
                             plcEl.className = 'plc-status online';
-                            plcText.innerText = 'PLC Online';
+                            plcText.innerText = 'PL&deg;C Online';
                         } else {
                             plcEl.className = 'plc-status offline';
-                            plcText.innerText = 'PLC Offline';
+                            plcText.innerText = 'PL&deg;C Offline';
                         }
                     }
 
                     // Lingkungan
-                    updateGauge('cAirTemp', 'vAirTemp', data.air_temperature, 15, 45, '°C');
+                    updateGauge('cAirTemp', 'vAirTemp', data.air_temperature, 15, 45, '°&deg;C');
                     updateGauge('cAirHumid', 'vAirHumid', data.air_humidity, 20, 100, '%');
                     let iklimStat = document.getElementById('iklimStatusText');
                     if (iklimStat) {
@@ -916,25 +922,25 @@
 
                     // Meja 1
                     if (data.meja1) {
-                        setMetricText('vM1Suhu', data.meja1.suhu, '°C');
+                        setMetricText('vM1Suhu', data.meja1.suhu, '°&deg;C');
                         setMetricText('vM1Humid', data.meja1.kelembapan, '%');
-                        updateGauge('cM1EC', 'vM1EC', data.meja1.ec, 0, 15, '');
+                        updateGauge('cM1E&deg;C', 'vM1E&deg;C', data.meja1.ec, 0, 15, '');
                         updateGauge('cM1pH', 'vM1pH', data.meja1.ph, 0, 14, '');
                     }
 
                     // Meja 2
                     if (data.meja2) {
-                        setMetricText('vM2Suhu', data.meja2.suhu, '°C');
+                        setMetricText('vM2Suhu', data.meja2.suhu, '°&deg;C');
                         setMetricText('vM2Humid', data.meja2.kelembapan, '%');
-                        updateGauge('cM2EC', 'vM2EC', data.meja2.ec, 0, 15, '');
+                        updateGauge('cM2E&deg;C', 'vM2E&deg;C', data.meja2.ec, 0, 15, '');
                         updateGauge('cM2pH', 'vM2pH', data.meja2.ph, 0, 14, '');
                     }
 
                     // Meja 3
                     if (data.meja3) {
-                        setMetricText('vM3Suhu', data.meja3.suhu, '°C');
+                        setMetricText('vM3Suhu', data.meja3.suhu, '°&deg;C');
                         setMetricText('vM3Humid', data.meja3.kelembapan, '%');
-                        updateGauge('cM3EC', 'vM3EC', data.meja3.ec, 0, 15, '');
+                        updateGauge('cM3E&deg;C', 'vM3E&deg;C', data.meja3.ec, 0, 15, '');
                         updateGauge('cM3pH', 'vM3pH', data.meja3.ph, 0, 14, '');
                     }
                 }
@@ -943,7 +949,7 @@
             }
         }
 
-        /* ─── MAC DOCK MAGNIFICATION LOGIC ─── */
+        /* ─── MA&deg;C DO&deg;CK MAGNIFI&deg;CATION LOGI&deg;C ─── */
         const macDock = document.getElementById('macDock');
         const dockItems = macDock ? macDock.querySelectorAll('.dock-item') : [];
         const maxScale = 1.4;
@@ -956,9 +962,9 @@
                     window.requestAnimationFrame(() => {
                         const mouseX = e.clientX;
                         dockItems.forEach(item => {
-                            const rect = item.getBoundingClientRect();
-                            const itemCenterX = rect.left + rect.width / 2;
-                            const distance = Math.abs(mouseX - itemCenterX);
+                            const rect = item.getBounding&deg;ClientRect();
+                            const item&deg;CenterX = rect.left + rect.width / 2;
+                            const distance = Math.abs(mouseX - item&deg;CenterX);
                             
                             let scale = 1;
                             if (distance < proximity) {
