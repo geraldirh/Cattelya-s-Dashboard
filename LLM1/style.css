@@ -2518,3 +2518,21 @@ body::before {
     background: rgba(0, 0, 0, 0.3) !important; /* Darken the square box so white icon is visible */
     border: 1px solid rgba(255, 255, 255, 0.05) !important;
 }
+
+/* === CHAT INPUT BAR DARK MODE FIX === */
+:root.dark-theme .chat-input-bar {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.2) !important;
+}
+
+:root.dark-theme .chat-input {
+    background: rgba(0, 0, 0, 0.4) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+:root.dark-theme .chat-send-btn i,
+:root.dark-theme .chat-attach-btn i {
+    color: #f8fafc !important;
+}
