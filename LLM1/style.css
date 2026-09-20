@@ -2536,3 +2536,27 @@ body::before {
 :root.dark-theme .chat-attach-btn i {
     color: #f8fafc !important;
 }
+
+/* === DATALOG TABLE DARK MODE FIX === */
+:root.dark-theme table th,
+:root.dark-theme #logsTable th {
+    background: rgba(15, 23, 42, 0.95) !important;
+    color: #ffffff !important;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+:root.dark-theme table td,
+:root.dark-theme #logsTable td {
+    color: #f1f5f9 !important;
+}
+
+:root.dark-theme table tbody tr,
+:root.dark-theme #logsTable tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background: transparent !important;
+}
+
+:root.dark-theme table tbody tr:hover,
+:root.dark-theme #logsTable tbody tr:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
