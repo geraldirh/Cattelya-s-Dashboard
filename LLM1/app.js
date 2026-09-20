@@ -845,7 +845,7 @@
             setInterval(fetchRealTimeTelemetry, 30000);
 
             // Cuaca awal dan berkala
-            fetchDatalogInterval();
+            fetchAndPopulateLogs();
             fetchWeather();
             setInterval(fetchWeather, 600000);
         });
