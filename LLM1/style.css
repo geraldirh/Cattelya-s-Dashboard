@@ -2495,3 +2495,26 @@ body::before {
 :root.dark-theme #tdsStatusText {
     color: #4ade80 !important; /* Optimal green */
 }
+
+/* === CONTROL PANEL DARK MODE FIXES === */
+:root.dark-theme .sim-panel {
+    background: rgba(15, 23, 42, 0.6) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+:root.dark-theme .mode-bar {
+    background: rgba(15, 23, 42, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #f8fafc !important;
+}
+
+:root.dark-theme .mode-hint {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #cbd5e1 !important;
+}
+
+:root.dark-theme .act-icon-wrap {
+    background: rgba(0, 0, 0, 0.3) !important; /* Darken the square box so white icon is visible */
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
