@@ -2467,3 +2467,31 @@ body::before {
 :root.dark-theme .datalog-controls {
     background: transparent !important;
 }
+
+/* === CRITICAL DARK MODE BACKGROUND FIXES === */
+:root.dark-theme .soil-stat-box {
+    background: rgba(15, 23, 42, 0.6) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2) !important;
+}
+
+:root.dark-theme .soil-stat-lbl {
+    color: #94a3b8 !important;
+}
+
+:root.dark-theme .meja-header-text {
+    background: rgba(15, 23, 42, 0.8) !important;
+    color: #f8fafc !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+:root.dark-theme .meja-header-text i {
+    color: #4ade80 !important;
+}
+
+/* Fix Status Iklim/Pencahayaan/Kualitas text color */
+:root.dark-theme #iklimStatusText,
+:root.dark-theme #cahayaStatusText,
+:root.dark-theme #tdsStatusText {
+    color: #4ade80 !important; /* Optimal green */
+}
