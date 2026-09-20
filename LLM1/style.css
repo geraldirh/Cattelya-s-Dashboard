@@ -2366,3 +2366,104 @@ body::before {
 :root.dark-theme .chat-bubble.ai * {
     color: #f8fafc !important;
 }
+
+/* === ADDITIONAL DARK MODE FIXES === */
+:root.dark-theme .soil-stat-val,
+:root.dark-theme .gauge-val {
+    color: #ffffff !important;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+:root.dark-theme .hero-badge {
+    background: rgba(15, 23, 42, 0.7) !important;
+    color: #f8fafc !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+:root.dark-theme .hero-badge i {
+    color: #4ade80 !important;
+}
+
+/* Control Panel Icons & Logos */
+:root.dark-theme .actuator-card i,
+:root.dark-theme .act-icon-wrap i,
+:root.dark-theme .panel-icon,
+:root.dark-theme .param-card i,
+:root.dark-theme .param-icon-wrap i {
+    color: #f8fafc !important;
+}
+
+/* Chat Input Area (Tanya Dokter) */
+:root.dark-theme .chat-input-area {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+:root.dark-theme .chat-input {
+    background: rgba(0, 0, 0, 0.4) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+:root.dark-theme .chat-input::placeholder {
+    color: #94a3b8 !important;
+    opacity: 1;
+}
+
+:root.dark-theme .chat-send-btn,
+:root.dark-theme .chat-attach-btn {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #f8fafc !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+:root.dark-theme .chat-send-btn:hover,
+:root.dark-theme .chat-attach-btn:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Data Logger Table and Controls */
+:root.dark-theme .table-head-row,
+:root.dark-theme .table-head-row th {
+    background: rgba(15, 23, 42, 0.95) !important;
+    color: #ffffff !important;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+:root.dark-theme .log-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    transition: background 0.2s;
+}
+
+:root.dark-theme .log-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+:root.dark-theme .log-table td {
+    color: #f1f5f9 !important;
+}
+
+:root.dark-theme .pagination button {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #f8fafc !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+:root.dark-theme .pagination button:disabled {
+    opacity: 0.3 !important;
+}
+
+:root.dark-theme .search-input {
+    background: rgba(0, 0, 0, 0.4) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+:root.dark-theme .search-input::placeholder {
+    color: #94a3b8 !important;
+}
+
+:root.dark-theme .datalog-controls {
+    background: transparent !important;
+}
