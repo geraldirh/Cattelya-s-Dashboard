@@ -2560,3 +2560,23 @@ body::before {
 :root.dark-theme #logsTable tbody tr:hover {
     background: rgba(255, 255, 255, 0.08) !important;
 }
+
+/* === CHART DARK MODE FIX === */
+:root.dark-theme .apexcharts-legend-text {
+    color: #f8fafc !important;
+}
+
+:root.dark-theme .apexcharts-text {
+    fill: #cbd5e1 !important;
+}
+
+:root.dark-theme .apexcharts-tooltip {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: #f8fafc !important;
+}
+
+:root.dark-theme .apexcharts-tooltip-title {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
