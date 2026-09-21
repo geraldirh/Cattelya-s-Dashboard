@@ -2688,7 +2688,7 @@ body {
 :root.dark-theme .table-wrap, 
 :root.dark-theme .param-card, 
 :root.dark-theme .actuator-card {
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.5) 100%) !important;
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.70) 100%) !important;
     backdrop-filter: blur(24px) saturate(150%) !important;
     -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
