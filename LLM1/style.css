@@ -2669,7 +2669,7 @@ body {
 /* 2. Redefining the Glass Cards for Premium Feel */
 /* We target Light Mode first */
 .metric-card, .glass-card, .sim-panel, .chart-wrap, .table-wrap, .param-card, .actuator-card {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.5) 100%) !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.78) 100%) !important;
     backdrop-filter: blur(24px) saturate(150%) !important;
     -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
     border: 1px solid rgba(255, 255, 255, 0.4) !important;
