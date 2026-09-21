@@ -2580,3 +2580,78 @@ body::before {
     background: rgba(255, 255, 255, 0.1) !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
+
+/* =========================================================
+   PREMIUM UI OPTIMIZATIONS & ANIMATIONS 
+   ========================================================= */
+
+/* 1. Global Smooth Scroll */
+html {
+    scroll-behavior: smooth;
+}
+
+/* 2. Dark Mode Scrollbar Fix */
+:root.dark-theme ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+}
+:root.dark-theme ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+/* 3. Staggered Entrance Animations for Cards */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.metric-card, .glass-card, .sim-panel, .chart-wrap, .table-wrap {
+    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* Stagger delays for a cascading reveal effect */
+.metric-card:nth-child(1) { animation-delay: 0.1s; }
+.metric-card:nth-child(2) { animation-delay: 0.2s; }
+.metric-card:nth-child(3) { animation-delay: 0.3s; }
+.metric-card:nth-child(4) { animation-delay: 0.4s; }
+.glass-card { animation-delay: 0.3s; }
+.sim-panel { animation-delay: 0.4s; }
+.chart-wrap { animation-delay: 0.5s; }
+.table-wrap { animation-delay: 0.6s; }
+
+/* 4. Neon Glow Effects for Active Actuators */
+.actuator-card {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Fan Glow (Green/Cyan) */
+.actuator-card.on-fan {
+    box-shadow: 0 0 20px rgba(74, 222, 128, 0.2), inset 0 0 10px rgba(74, 222, 128, 0.1) !important;
+    border-color: rgba(74, 222, 128, 0.4) !important;
+}
+
+/* Mist Glow (Blue) */
+.actuator-card.on-mist {
+    box-shadow: 0 0 20px rgba(96, 165, 250, 0.2), inset 0 0 10px rgba(96, 165, 250, 0.1) !important;
+    border-color: rgba(96, 165, 250, 0.4) !important;
+}
+
+/* Pump Glow (Purple/Indigo) */
+.actuator-card.on-pump {
+    box-shadow: 0 0 20px rgba(167, 139, 250, 0.2), inset 0 0 10px rgba(167, 139, 250, 0.1) !important;
+    border-color: rgba(167, 139, 250, 0.4) !important;
+}
+
+/* 5. Enhanced Interactive Hover */
+.actuator-card:hover, .metric-card:hover {
+    transform: translateY(-4px) scale(1.01) !important;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important;
+}
+:root.dark-theme .actuator-card:hover, :root.dark-theme .metric-card:hover {
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4) !important;
+}
