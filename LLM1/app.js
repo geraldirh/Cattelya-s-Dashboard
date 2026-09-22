@@ -629,14 +629,15 @@
                 const labels = logs.map(l => l.timestamp.includes(' ') ? l.timestamp.split(' ')[1] : l.timestamp);
                 
                 const commonOptions = {
-                    chart: { height: 150, type: 'area', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, sparkline: { enabled: true } },
+                    chart: { height: 160, type: 'area', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, sparkline: { enabled: false } },
                     dataLabels: { enabled: false },
                     stroke: { curve: 'smooth', width: 2 },
                     fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.5, opacityTo: 0.0, stops: [0, 100] } },
-                    xaxis: { categories: labels, labels: { show: false }, axisBorder: { show: false }, axisTicks: { show: false } },
+                    xaxis: { categories: labels, labels: { show: true, style: { colors: '#94a3b8', fontSize: '10px' } }, axisBorder: { show: false }, axisTicks: { show: false }, tickAmount: 6, tooltip: { enabled: false } },
                     yaxis: { show: false },
+                    grid: { show: false, padding: { top: 0, right: 0, bottom: 0, left: 10 } },
                     legend: { show: false },
-                    tooltip: { theme: 'light', fixed: { enabled: false }, x: { show: false }, marker: { show: false } }
+                    tooltip: { theme: 'light', marker: { show: true } }
                 };
 
                 const updateStats = (id_prefix, dataArray, unit="") => {
@@ -662,9 +663,8 @@
                     
                     const opt = { 
                         ...commonOptions, 
-                        series: [{ data: dataArray }], 
-                        colors: [color],
-                        tooltip: { ...commonOptions.tooltip, y: { title: { formatter: () => '' } } }
+                        series: [{ name: 'Nilai', data: dataArray }], 
+                        colors: [color]
                     };
                     el._chart = new ApexCharts(el, opt);
                     el._chart.render();
