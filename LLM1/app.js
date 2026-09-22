@@ -688,9 +688,17 @@
                 // --- 2. SOIL SENSOR ---
                 const getAvg = (l, param) => {
                     const vals = [];
-                    if (l.meja1 && typeof l.meja1[param] === 'number') vals.push(l.meja1[param]);
-                    if (l.meja2 && typeof l.meja2[param] === 'number') vals.push(l.meja2[param]);
-                    if (l.meja3 && typeof l.meja3[param] === 'number') vals.push(l.meja3[param]);
+                    const parseAndPush = (val) => {
+                        const num = parseFloat(val);
+                        // Filter invalid pH values (hardware glitches)
+                        if (!isNaN(num)) {
+                            if (param === 'ph' && (num < 0 || num > 14)) return;
+                            vals.push(num);
+                        }
+                    };
+                    if (l.meja1 && l.meja1[param] !== undefined) parseAndPush(l.meja1[param]);
+                    if (l.meja2 && l.meja2[param] !== undefined) parseAndPush(l.meja2[param]);
+                    if (l.meja3 && l.meja3[param] !== undefined) parseAndPush(l.meja3[param]);
                     if (vals.length === 0) return 0;
                     return Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2));
                 };
