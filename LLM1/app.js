@@ -627,53 +627,67 @@
                 });
 
                 const labels = logs.map(l => l.timestamp.includes(' ') ? l.timestamp.split(' ')[1] : l.timestamp);
-                if (logsChart) logsChart.destroy();
                 
-                const options = {
-                    series: [{
-                        name: 'Suhu Udara (°C)',
-                        data: logs.map(l => l.air_temperature || 0)
-                    }, {
-                        name: 'Humid Udara (%)',
-                        data: logs.map(l => l.air_humidity || 0)
-                    }, {
-                        name: 'Humid Tanah M1 (%)',
-                        data: logs.map(l => l.meja1?.kelembapan || 0)
-                    }],
-                    chart: {
-                        height: 300,
-                        type: 'area',
-                        fontFamily: 'Inter, sans-serif',
-                        toolbar: {
-                            show: true,
-                            tools: { download: false, selection: true, zoom: true, pan: true }
-                        }
-                    },
-                    colors: ['#2e7d32', '#7b1fa2', '#e65100'],
+                const commonOptions = {
+                    chart: { height: 250, type: 'area', fontFamily: 'Inter, sans-serif', toolbar: { show: false } },
                     dataLabels: { enabled: false },
-                    stroke: { curve: 'smooth', width: [3, 2.5, 2], dashArray: [0, 0, 4] },
-                    fill: {
-                        type: 'gradient',
-                        gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] }
-                    },
-                    xaxis: {
-                        categories: labels,
-                        labels: { style: { colors: '#94a3b8' } },
-                        axisBorder: { show: false },
-                        axisTicks: { show: false }
-                    },
-                    yaxis: [
-                        { seriesName: 'Suhu Udara (°C)', labels: { style: { colors: '#94a3b8' } } },
-                        { seriesName: 'Humid Udara (%)', opposite: true, labels: { style: { colors: '#94a3b8' } } },
-                        { seriesName: 'Humid Tanah M1 (%)', show: false }
-                    ],
+                    stroke: { curve: 'smooth', width: 2 },
+                    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] } },
+                    xaxis: { categories: labels, labels: { style: { colors: '#94a3b8' } }, axisBorder: { show: false }, axisTicks: { show: false } },
                     legend: { position: 'top', horizontalAlign: 'center' },
                     tooltip: { theme: 'light' }
                 };
 
-                logsChart = new ApexCharts(document.querySelector("#logsChart"), options);
-                logsChart.render();
-            } catch (e) { console.error('Logger error:', e); }
+                // Helper function to render a chart safely
+                const renderChart = (selector, series, yaxisOptions = {}) => {
+                    const el = document.querySelector(selector);
+                    if (!el) return;
+                    if (el._chart) { el._chart.destroy(); }
+                    
+                    const opt = { ...commonOptions, series, yaxis: yaxisOptions };
+                    el._chart = new ApexCharts(el, opt);
+                    el._chart.render();
+                };
+
+                // 1. Suhu Tanah
+                renderChart('#chartSuhuTanah', [
+                    { name: 'Meja 1 (°C)', data: logs.map(l => l.meja1?.suhu || 0) },
+                    { name: 'Meja 2 (°C)', data: logs.map(l => l.meja2?.suhu || 0) },
+                    { name: 'Meja 3 (°C)', data: logs.map(l => l.meja3?.suhu || 0) }
+                ], { labels: { style: { colors: '#94a3b8' } } });
+
+                // 2. Kelembapan Tanah
+                renderChart('#chartHumidTanah', [
+                    { name: 'Meja 1 (%)', data: logs.map(l => l.meja1?.kelembapan || 0) },
+                    { name: 'Meja 2 (%)', data: logs.map(l => l.meja2?.kelembapan || 0) },
+                    { name: 'Meja 3 (%)', data: logs.map(l => l.meja3?.kelembapan || 0) }
+                ], { labels: { style: { colors: '#94a3b8' } } });
+
+                // 3. EC Tanah
+                renderChart('#chartECTanah', [
+                    { name: 'Meja 1 (mS/cm)', data: logs.map(l => l.meja1?.ec || 0) },
+                    { name: 'Meja 2 (mS/cm)', data: logs.map(l => l.meja2?.ec || 0) },
+                    { name: 'Meja 3 (mS/cm)', data: logs.map(l => l.meja3?.ec || 0) }
+                ], { labels: { style: { colors: '#94a3b8' } } });
+
+                // 4. Perbandingan Suhu & Kelembapan (Meja 1)
+                renderChart('#chartBandingTanah', [
+                    { name: 'Suhu M1 (°C)', type: 'line', data: logs.map(l => l.meja1?.suhu || 0) },
+                    { name: 'Humid M1 (%)', type: 'area', data: logs.map(l => l.meja1?.kelembapan || 0) }
+                ], [
+                    { seriesName: 'Suhu M1 (°C)', title: { text: 'Suhu (°C)' }, labels: { style: { colors: '#f59e0b' } } },
+                    { seriesName: 'Humid M1 (%)', opposite: true, title: { text: 'Kelembapan (%)' }, labels: { style: { colors: '#0ea5e9' } } }
+                ]);
+
+                // 5. Udara
+                renderChart('#chartUdara', [
+                    { name: 'Suhu Udara (°C)', type: 'line', data: logs.map(l => l.air_temperature || 0) },
+                    { name: 'Humid Udara (%)', type: 'area', data: logs.map(l => l.air_humidity || 0) }
+                ], [
+                    { seriesName: 'Suhu Udara (°C)', title: { text: 'Suhu (°C)' }, labels: { style: { colors: '#f97316' } } },
+                    { seriesName: 'Humid Udara (%)', opposite: true, title: { text: 'Kelembapan (%)' }, labels: { style: { colors: '#06b6d4' } } }
+                ]);
+} catch (e) { console.error('Logger error:', e); }
         }
 
         function unlockSecretConfig() {

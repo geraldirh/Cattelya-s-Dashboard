@@ -845,10 +845,28 @@
         <div class="tab-content" id="logger-tab">
             <div class="logger-layout">
                 <div class="chart-wrap">
-                    <div class="section-title" style="margin-bottom:20px;"><i data-lucide="trending-up"></i> Grafik Tren
-                        Parameter Klimatologi</div>
-                    <div style="position:relative; height:300px; width:100%;">
-                        <div id="logsChart"></div>
+                    <div class="section-title" style="margin-bottom:20px;"><i data-lucide="trending-up"></i> Grafik Tren Lingkungan & Tanah</div>
+                    <div class="charts-grid">
+                        <div class="chart-wrap">
+                            <div class="chart-title">Suhu Tanah</div>
+                            <div id="chartSuhuTanah" style="min-height: 250px;"></div>
+                        </div>
+                        <div class="chart-wrap">
+                            <div class="chart-title">Kelembapan Tanah</div>
+                            <div id="chartHumidTanah" style="min-height: 250px;"></div>
+                        </div>
+                        <div class="chart-wrap">
+                            <div class="chart-title">EC Tanah</div>
+                            <div id="chartECTanah" style="min-height: 250px;"></div>
+                        </div>
+                        <div class="chart-wrap">
+                            <div class="chart-title">Perbandingan Suhu & Kelembapan (M1)</div>
+                            <div id="chartBandingTanah" style="min-height: 250px;"></div>
+                        </div>
+                        <div class="chart-wrap" style="grid-column: 1 / -1;">
+                            <div class="chart-title">Suhu & Kelembapan Udara</div>
+                            <div id="chartUdara" style="min-height: 250px;"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="table-wrap">
