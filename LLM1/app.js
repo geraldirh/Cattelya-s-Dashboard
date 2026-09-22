@@ -686,10 +686,19 @@
 
 
                 // --- 2. SOIL SENSOR ---
-                const soilSuhu = logs.map(l => l.meja1?.suhu || 0);
-                const soilHumid = logs.map(l => l.meja1?.kelembapan || 0);
-                const soilPh = logs.map(l => l.meja1?.ph || 0);
-                const soilEc = logs.map(l => l.meja1?.ec || 0);
+                const getAvg = (l, param) => {
+                    const vals = [];
+                    if (l.meja1 && typeof l.meja1[param] === 'number') vals.push(l.meja1[param]);
+                    if (l.meja2 && typeof l.meja2[param] === 'number') vals.push(l.meja2[param]);
+                    if (l.meja3 && typeof l.meja3[param] === 'number') vals.push(l.meja3[param]);
+                    if (vals.length === 0) return 0;
+                    return Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2));
+                };
+
+                const soilSuhu = logs.map(l => getAvg(l, 'suhu'));
+                const soilHumid = logs.map(l => getAvg(l, 'kelembapan'));
+                const soilPh = logs.map(l => getAvg(l, 'ph'));
+                const soilEc = logs.map(l => getAvg(l, 'ec'));
 
                 updateStats('soil-suhu', soilSuhu, '°C');
                 renderSparkline('#chart-soil-suhu', soilSuhu, '#f97316');
