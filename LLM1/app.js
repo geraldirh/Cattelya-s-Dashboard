@@ -629,13 +629,24 @@
                 const labels = logs.map(l => l.timestamp.includes(' ') ? l.timestamp.split(' ')[1] : l.timestamp);
                 
                 const commonOptions = {
-                    chart: { height: 160, type: 'area', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, sparkline: { enabled: false } },
+                    chart: { height: 180, type: 'area', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, sparkline: { enabled: false } },
                     dataLabels: { enabled: false },
                     stroke: { curve: 'smooth', width: 2 },
                     fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.5, opacityTo: 0.0, stops: [0, 100] } },
-                    xaxis: { categories: labels, labels: { show: true, style: { colors: '#94a3b8', fontSize: '10px' } }, axisBorder: { show: false }, axisTicks: { show: false }, tickAmount: 6, tooltip: { enabled: false } },
-                    yaxis: { show: false },
-                    grid: { show: false, padding: { top: 0, right: 0, bottom: 0, left: 10 } },
+                    xaxis: { 
+                        categories: labels, 
+                        labels: { show: true, style: { colors: '#94a3b8', fontSize: '10px' } }, 
+                        axisBorder: { show: true, color: '#e2e8f0' }, 
+                        axisTicks: { show: true }, 
+                        tickAmount: 6,
+                        title: { text: 'Waktu (Jam)', style: { color: '#94a3b8', fontSize: '10px', fontWeight: 500 } },
+                        tooltip: { enabled: false } 
+                    },
+                    yaxis: { 
+                        show: true, 
+                        labels: { style: { colors: '#94a3b8', fontSize: '10px' }, formatter: (value) => value.toFixed(1) }
+                    },
+                    grid: { show: true, borderColor: '#f1f5f9', strokeDashArray: 4, padding: { top: 0, right: 10, bottom: 0, left: 10 } },
                     legend: { show: false },
                     tooltip: { theme: 'light', marker: { show: true } }
                 };
