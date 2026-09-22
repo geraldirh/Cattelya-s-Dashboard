@@ -639,12 +639,12 @@
                 };
 
                 // Helper function to render a chart safely
-                const renderChart = (selector, series, yaxisOptions = {}) => {
+                const renderChart = (selector, series, yaxisOptions = {}, extraOpt = {}) => {
                     const el = document.querySelector(selector);
                     if (!el) return;
                     if (el._chart) { el._chart.destroy(); }
                     
-                    const opt = { ...commonOptions, series, yaxis: yaxisOptions };
+                    const opt = { ...commonOptions, series, yaxis: yaxisOptions, ...extraOpt };
                     el._chart = new ApexCharts(el, opt);
                     el._chart.render();
                 };
@@ -672,21 +672,21 @@
 
                 // 4. Perbandingan Suhu & Kelembapan (Meja 1)
                 renderChart('#chartBandingTanah', [
-                    { name: 'Suhu M1 (°C)', type: 'line', data: logs.map(l => l.meja1?.suhu || 0) },
-                    { name: 'Humid M1 (%)', type: 'area', data: logs.map(l => l.meja1?.kelembapan || 0) }
+                    { name: 'Suhu M1 (°C)', type: 'area', data: logs.map(l => l.meja1?.suhu || 0) },
+                    { name: 'Humid M1 (%)', type: 'bar', data: logs.map(l => l.meja1?.kelembapan || 0) }
                 ], [
                     { seriesName: 'Suhu M1 (°C)', title: { text: 'Suhu (°C)' }, labels: { style: { colors: '#f59e0b' } } },
                     { seriesName: 'Humid M1 (%)', opposite: true, title: { text: 'Kelembapan (%)' }, labels: { style: { colors: '#0ea5e9' } } }
-                ]);
+                ], { chart: { type: 'line', height: 250, toolbar: { show: false } }, stroke: { width: [2, 0] }, fill: { type: ['gradient', 'solid'] } });
 
                 // 5. Udara
                 renderChart('#chartUdara', [
-                    { name: 'Suhu Udara (°C)', type: 'line', data: logs.map(l => l.air_temperature || 0) },
-                    { name: 'Humid Udara (%)', type: 'area', data: logs.map(l => l.air_humidity || 0) }
+                    { name: 'Suhu Udara (°C)', type: 'area', data: logs.map(l => l.air_temperature || 0) },
+                    { name: 'Humid Udara (%)', type: 'bar', data: logs.map(l => l.air_humidity || 0) }
                 ], [
                     { seriesName: 'Suhu Udara (°C)', title: { text: 'Suhu (°C)' }, labels: { style: { colors: '#f97316' } } },
                     { seriesName: 'Humid Udara (%)', opposite: true, title: { text: 'Kelembapan (%)' }, labels: { style: { colors: '#06b6d4' } } }
-                ]);
+                ], { chart: { type: 'line', height: 250, toolbar: { show: false } }, stroke: { width: [2, 0] }, fill: { type: ['gradient', 'solid'] } });
 } catch (e) { console.error('Logger error:', e); }
         }
 
