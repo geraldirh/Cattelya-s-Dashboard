@@ -2805,3 +2805,85 @@ body {
 :root.dark-theme .chart-title {
     color: #f8fafc;
 }
+
+
+/* =========================================================
+   NEW CHARTS LAYOUT (ENVIRONMENT & SOIL)
+   ========================================================= */
+.charts-master-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding-bottom: 20px;
+}
+.charts-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+.charts-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+.charts-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+@media (max-width: 1024px) {
+    .charts-grid-3, .charts-grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+    .charts-grid-3, .charts-grid-4, .charts-grid-2 { grid-template-columns: 1fr; }
+}
+
+.chart-card-solid {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    padding: 16px;
+    border: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+:root.dark-theme .chart-card-solid {
+    background: rgba(30, 41, 59, 0.7);
+    border-color: rgba(255,255,255,0.05);
+}
+
+.chart-spark-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+}
+
+.spark-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+}
+.spark-title .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.spark-stats {
+    display: flex;
+    gap: 8px;
+    font-size: 0.75rem;
+}
+.spark-stats .stat-min { color: #3b82f6; }
+.spark-stats .stat-cur { font-weight: 700; font-size: 0.85rem; }
+.spark-stats .stat-max { color: #ef4444; }
+
+:root.dark-theme .spark-title { color: #e2e8f0 !important; }
+:root.dark-theme .spark-stats .stat-cur { color: #f8fafc !important; }

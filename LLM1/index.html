@@ -845,29 +845,112 @@
         <div class="tab-content" id="logger-tab">
             <div class="logger-layout">
                 <div class="chart-wrap">
-                    <div class="section-title" style="margin-bottom:20px;"><i data-lucide="trending-up"></i> Grafik Tren Lingkungan & Tanah</div>
-                    <div class="charts-grid">
-                        <div class="chart-wrap">
-                            <div class="chart-title">Suhu Tanah</div>
-                            <div id="chartSuhuTanah" style="min-height: 250px;"></div>
+                    <div class="charts-master-container">
+                    
+                    <div class="section-title" style="margin-bottom:15px; margin-top: 10px;"><i data-lucide="leaf"></i> Environment Sensor</div>
+                    <div class="charts-grid-3">
+                        
+        <div class="chart-card-solid">
+            <div class="chart-spark-header">
+                <div class="spark-title" style="color: #6b21a8;"><span class="dot" style="background: #8b5cf6;"></span> Suhu Lingkungan</div>
+                <div class="spark-stats">
+                    <span class="stat-min" id="min-env-suhu">↓0.0</span>
+                    <span class="stat-cur" id="cur-env-suhu" style="color: #6b21a8;">0.0 °C</span>
+                    <span class="stat-max" id="max-env-suhu">↑0.0</span>
+                </div>
+            </div>
+            <div id="chart-env-suhu" style="min-height: 150px; margin-top: -10px;"></div>
+        </div>
+                        
+        <div class="chart-card-solid">
+            <div class="chart-spark-header">
+                <div class="spark-title" style="color: #047857;"><span class="dot" style="background: #10b981;"></span> Kelembapan Lingkungan</div>
+                <div class="spark-stats">
+                    <span class="stat-min" id="min-env-humid">↓0.0</span>
+                    <span class="stat-cur" id="cur-env-humid" style="color: #047857;">0.0 %</span>
+                    <span class="stat-max" id="max-env-humid">↑0.0</span>
+                </div>
+            </div>
+            <div id="chart-env-humid" style="min-height: 150px; margin-top: -10px;"></div>
+        </div>
+                        
+        <div class="chart-card-solid">
+            <div class="chart-spark-header">
+                <div class="spark-title" style="color: #a16207;"><span class="dot" style="background: #eab308;"></span> Cahaya</div>
+                <div class="spark-stats">
+                    <span class="stat-min" id="min-env-lux">↓0.0</span>
+                    <span class="stat-cur" id="cur-env-lux" style="color: #a16207;">0.0 lux</span>
+                    <span class="stat-max" id="max-env-lux">↑0.0</span>
+                </div>
+            </div>
+            <div id="chart-env-lux" style="min-height: 150px; margin-top: -10px;"></div>
+        </div>
+                    </div>
+
+                    <div class="section-title" style="margin-bottom:15px; margin-top: 25px;"><i data-lucide="sprout"></i> Soil Sensor</div>
+                    <div class="charts-grid-4">
+                        
+        <div class="chart-card-solid">
+            <div class="chart-spark-header">
+                <div class="spark-title" style="color: #c2410c;"><span class="dot" style="background: #f97316;"></span> Suhu Tanah</div>
+                <div class="spark-stats">
+                    <span class="stat-min" id="min-soil-suhu">↓0.0</span>
+                    <span class="stat-cur" id="cur-soil-suhu" style="color: #c2410c;">0.0 °C</span>
+                    <span class="stat-max" id="max-soil-suhu">↑0.0</span>
+                </div>
+            </div>
+            <div id="chart-soil-suhu" style="min-height: 150px; margin-top: -10px;"></div>
+        </div>
+                        
+        <div class="chart-card-solid">
+            <div class="chart-spark-header">
+                <div class="spark-title" style="color: #0369a1;"><span class="dot" style="background: #0ea5e9;"></span> Kelembapan Tanah</div>
+                <div class="spark-stats">
+                    <span class="stat-min" id="min-soil-humid">↓0.0</span>
+                    <span class="stat-cur" id="cur-soil-humid" style="color: #0369a1;">0.0 %</span>
+                    <span class="stat-max" id="max-soil-humid">↑0.0</span>
+                </div>
+            </div>
+            <div id="chart-soil-humid" style="min-height: 150px; margin-top: -10px;"></div>
+        </div>
+                        
+        <div class="chart-card-solid">
+            <div class="chart-spark-header">
+                <div class="spark-title" style="color: #be185d;"><span class="dot" style="background: #ec4899;"></span> pH</div>
+                <div class="spark-stats">
+                    <span class="stat-min" id="min-soil-ph">↓0.0</span>
+                    <span class="stat-cur" id="cur-soil-ph" style="color: #be185d;">0.0 </span>
+                    <span class="stat-max" id="max-soil-ph">↑0.0</span>
+                </div>
+            </div>
+            <div id="chart-soil-ph" style="min-height: 150px; margin-top: -10px;"></div>
+        </div>
+                        
+        <div class="chart-card-solid">
+            <div class="chart-spark-header">
+                <div class="spark-title" style="color: #b91c1c;"><span class="dot" style="background: #ef4444;"></span> Conductivity</div>
+                <div class="spark-stats">
+                    <span class="stat-min" id="min-soil-ec">↓0.0</span>
+                    <span class="stat-cur" id="cur-soil-ec" style="color: #b91c1c;">0.0 mS/cm</span>
+                    <span class="stat-max" id="max-soil-ec">↑0.0</span>
+                </div>
+            </div>
+            <div id="chart-soil-ec" style="min-height: 150px; margin-top: -10px;"></div>
+        </div>
+                    </div>
+
+                    <div class="section-title" style="margin-bottom:15px; margin-top: 25px;"><i data-lucide="bar-chart-2"></i> Grafik Perbandingan</div>
+                    <div class="charts-grid-2">
+                        <div class="chart-card-solid">
+                            <div class="spark-title" style="color: #334155; margin-bottom: 10px;">Perbandingan Suhu & Kelembapan Tanah</div>
+                            <div id="chart-comp-tanah" style="min-height: 250px;"></div>
                         </div>
-                        <div class="chart-wrap">
-                            <div class="chart-title">Kelembapan Tanah</div>
-                            <div id="chartHumidTanah" style="min-height: 250px;"></div>
-                        </div>
-                        <div class="chart-wrap">
-                            <div class="chart-title">EC Tanah</div>
-                            <div id="chartECTanah" style="min-height: 250px;"></div>
-                        </div>
-                        <div class="chart-wrap">
-                            <div class="chart-title">Perbandingan Suhu & Kelembapan (M1)</div>
-                            <div id="chartBandingTanah" style="min-height: 250px;"></div>
-                        </div>
-                        <div class="chart-wrap" style="grid-column: 1 / -1;">
-                            <div class="chart-title">Suhu & Kelembapan Udara</div>
-                            <div id="chartUdara" style="min-height: 250px;"></div>
+                        <div class="chart-card-solid">
+                            <div class="spark-title" style="color: #334155; margin-bottom: 10px;">Perbandingan pH & Conductivity</div>
+                            <div id="chart-comp-ph" style="min-height: 250px;"></div>
                         </div>
                     </div>
+
                 </div>
                 <div class="table-wrap">
                     <div class="table-head-row">

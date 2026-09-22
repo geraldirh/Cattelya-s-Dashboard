@@ -629,64 +629,119 @@
                 const labels = logs.map(l => l.timestamp.includes(' ') ? l.timestamp.split(' ')[1] : l.timestamp);
                 
                 const commonOptions = {
-                    chart: { height: 250, type: 'area', fontFamily: 'Inter, sans-serif', toolbar: { show: false } },
+                    chart: { height: 150, type: 'area', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, sparkline: { enabled: true } },
                     dataLabels: { enabled: false },
                     stroke: { curve: 'smooth', width: 2 },
-                    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] } },
-                    xaxis: { categories: labels, labels: { style: { colors: '#94a3b8' } }, axisBorder: { show: false }, axisTicks: { show: false } },
-                    legend: { position: 'top', horizontalAlign: 'center' },
-                    tooltip: { theme: 'light' }
+                    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.5, opacityTo: 0.0, stops: [0, 100] } },
+                    xaxis: { categories: labels, labels: { show: false }, axisBorder: { show: false }, axisTicks: { show: false } },
+                    yaxis: { show: false },
+                    legend: { show: false },
+                    tooltip: { theme: 'light', fixed: { enabled: false }, x: { show: false }, marker: { show: false } }
                 };
 
-                // Helper function to render a chart safely
-                const renderChart = (selector, series, yaxisOptions = {}, extraOpt = {}) => {
-                    const el = document.querySelector(selector);
+                const updateStats = (id_prefix, dataArray, unit="") => {
+                    const validData = dataArray.filter(v => v !== null && v !== undefined && !isNaN(v));
+                    if(validData.length === 0) return;
+                    const min = Math.min(...validData).toFixed(1);
+                    const max = Math.max(...validData).toFixed(1);
+                    const cur = validData[validData.length - 1].toFixed(1);
+                    
+                    const minEl = document.getElementById('min-' + id_prefix);
+                    const maxEl = document.getElementById('max-' + id_prefix);
+                    const curEl = document.getElementById('cur-' + id_prefix);
+                    
+                    if(minEl) minEl.innerText = '↓' + min;
+                    if(maxEl) maxEl.innerText = '↑' + max;
+                    if(curEl) curEl.innerText = cur + ' ' + unit;
+                };
+
+                const renderSparkline = (id, dataArray, color) => {
+                    const el = document.querySelector(id);
                     if (!el) return;
                     if (el._chart) { el._chart.destroy(); }
                     
-                    const opt = { ...commonOptions, series, yaxis: yaxisOptions, ...extraOpt };
+                    const opt = { 
+                        ...commonOptions, 
+                        series: [{ data: dataArray }], 
+                        colors: [color],
+                        tooltip: { ...commonOptions.tooltip, y: { title: { formatter: () => '' } } }
+                    };
                     el._chart = new ApexCharts(el, opt);
                     el._chart.render();
                 };
 
-                // 1. Suhu Tanah
-                renderChart('#chartSuhuTanah', [
-                    { name: 'Meja 1 (°C)', data: logs.map(l => l.meja1?.suhu || 0) },
-                    { name: 'Meja 2 (°C)', data: logs.map(l => l.meja2?.suhu || 0) },
-                    { name: 'Meja 3 (°C)', data: logs.map(l => l.meja3?.suhu || 0) }
-                ], { labels: { style: { colors: '#94a3b8' } } });
+                // --- 1. ENVIRONMENT SENSOR ---
+                const envSuhu = logs.map(l => l.air_temperature || 0);
+                const envHumid = logs.map(l => l.air_humidity || 0);
+                const envLux = logs.map(l => l.lux || 0);
+                
+                updateStats('env-suhu', envSuhu, '°C');
+                renderSparkline('#chart-env-suhu', envSuhu, '#8b5cf6');
 
-                // 2. Kelembapan Tanah
-                renderChart('#chartHumidTanah', [
-                    { name: 'Meja 1 (%)', data: logs.map(l => l.meja1?.kelembapan || 0) },
-                    { name: 'Meja 2 (%)', data: logs.map(l => l.meja2?.kelembapan || 0) },
-                    { name: 'Meja 3 (%)', data: logs.map(l => l.meja3?.kelembapan || 0) }
-                ], { labels: { style: { colors: '#94a3b8' } } });
+                updateStats('env-humid', envHumid, '%');
+                renderSparkline('#chart-env-humid', envHumid, '#10b981');
 
-                // 3. EC Tanah
-                renderChart('#chartECTanah', [
-                    { name: 'Meja 1 (mS/cm)', data: logs.map(l => l.meja1?.ec || 0) },
-                    { name: 'Meja 2 (mS/cm)', data: logs.map(l => l.meja2?.ec || 0) },
-                    { name: 'Meja 3 (mS/cm)', data: logs.map(l => l.meja3?.ec || 0) }
-                ], { labels: { style: { colors: '#94a3b8' } } });
+                updateStats('env-lux', envLux, 'lux');
+                renderSparkline('#chart-env-lux', envLux, '#eab308');
 
-                // 4. Perbandingan Suhu & Kelembapan (Meja 1)
-                renderChart('#chartBandingTanah', [
-                    { name: 'Suhu M1 (°C)', type: 'area', data: logs.map(l => l.meja1?.suhu || 0) },
-                    { name: 'Humid M1 (%)', type: 'bar', data: logs.map(l => l.meja1?.kelembapan || 0) }
+
+                // --- 2. SOIL SENSOR ---
+                const soilSuhu = logs.map(l => l.meja1?.suhu || 0);
+                const soilHumid = logs.map(l => l.meja1?.kelembapan || 0);
+                const soilPh = logs.map(l => l.meja1?.ph || 0);
+                const soilEc = logs.map(l => l.meja1?.ec || 0);
+
+                updateStats('soil-suhu', soilSuhu, '°C');
+                renderSparkline('#chart-soil-suhu', soilSuhu, '#f97316');
+
+                updateStats('soil-humid', soilHumid, '%');
+                renderSparkline('#chart-soil-humid', soilHumid, '#0ea5e9');
+
+                updateStats('soil-ph', soilPh, '');
+                renderSparkline('#chart-soil-ph', soilPh, '#ec4899');
+
+                updateStats('soil-ec', soilEc, 'mS/cm');
+                renderSparkline('#chart-soil-ec', soilEc, '#ef4444');
+
+
+                // --- 3. COMPARISON CHARTS ---
+                const renderComparison = (selector, series, yaxisOptions, colors) => {
+                    const el = document.querySelector(selector);
+                    if (!el) return;
+                    if (el._chart) { el._chart.destroy(); }
+                    
+                    const opt = {
+                        chart: { height: 250, type: 'line', fontFamily: 'Inter, sans-serif', toolbar: { show: false } },
+                        series: series,
+                        colors: colors,
+                        dataLabels: { enabled: false },
+                        stroke: { curve: 'smooth', width: [2, 0] },
+                        fill: { type: ['gradient', 'solid'], gradient: { shadeIntensity: 1, opacityFrom: 0.5, opacityTo: 0.05, stops: [0, 100] } },
+                        xaxis: { categories: labels, labels: { style: { colors: '#94a3b8' } }, axisBorder: { show: false }, axisTicks: { show: false }, tickAmount: 10 },
+                        yaxis: yaxisOptions,
+                        legend: { position: 'bottom', horizontalAlign: 'center' },
+                        tooltip: { theme: 'light' }
+                    };
+                    el._chart = new ApexCharts(el, opt);
+                    el._chart.render();
+                };
+
+                renderComparison('#chart-comp-tanah', [
+                    { name: 'Suhu Tanah (°C)', type: 'line', data: soilSuhu },
+                    { name: 'Kelembapan Tanah (%)', type: 'line', data: soilHumid } // Image 1 left chart uses Line + Line
                 ], [
-                    { seriesName: 'Suhu M1 (°C)', title: { text: 'Suhu (°C)' }, labels: { style: { colors: '#f59e0b' } } },
-                    { seriesName: 'Humid M1 (%)', opposite: true, title: { text: 'Kelembapan (%)' }, labels: { style: { colors: '#0ea5e9' } } }
-                ], { chart: { type: 'line', height: 250, toolbar: { show: false } }, stroke: { width: [2, 0] }, fill: { type: ['gradient', 'solid'] } });
+                    { seriesName: 'Suhu Tanah (°C)', labels: { style: { colors: '#f97316' } } },
+                    { seriesName: 'Kelembapan Tanah (%)', opposite: true, labels: { style: { colors: '#0ea5e9' } } }
+                ], ['#f97316', '#0ea5e9']);
 
-                // 5. Udara
-                renderChart('#chartUdara', [
-                    { name: 'Suhu Udara (°C)', type: 'area', data: logs.map(l => l.air_temperature || 0) },
-                    { name: 'Humid Udara (%)', type: 'bar', data: logs.map(l => l.air_humidity || 0) }
+                renderComparison('#chart-comp-ph', [
+                    { name: 'pH', type: 'line', data: soilPh },
+                    { name: 'Conductivity (mS/cm)', type: 'bar', data: soilEc } // Image 1 right chart uses Line + Bar
                 ], [
-                    { seriesName: 'Suhu Udara (°C)', title: { text: 'Suhu (°C)' }, labels: { style: { colors: '#f97316' } } },
-                    { seriesName: 'Humid Udara (%)', opposite: true, title: { text: 'Kelembapan (%)' }, labels: { style: { colors: '#06b6d4' } } }
-                ], { chart: { type: 'line', height: 250, toolbar: { show: false } }, stroke: { width: [2, 0] }, fill: { type: ['gradient', 'solid'] } });
+                    { seriesName: 'pH', labels: { style: { colors: '#ec4899' } } },
+                    { seriesName: 'Conductivity (mS/cm)', opposite: true, labels: { style: { colors: '#ef4444' } } }
+                ], ['#ec4899', '#ef4444']);
+
 } catch (e) { console.error('Logger error:', e); }
         }
 
