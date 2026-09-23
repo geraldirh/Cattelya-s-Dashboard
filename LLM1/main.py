@@ -190,19 +190,19 @@ def on_mqtt_message(client, userdata, msg):
             # Parsing Data Meja 1
             if "m1_suhu" in payload: latest_telemetry["meja1"]["suhu"] = round(float(payload["m1_suhu"]) / 10.0, 1)
             if "m1_kelembapan" in payload: latest_telemetry["meja1"]["kelembapan"] = round(float(payload["m1_kelembapan"]) / 10.0, 1)
-            if "m1_EC" in payload: latest_telemetry["meja1"]["ec"] = round(float(payload["m1_EC"]) / 10.0, 1)
+            if "m1_EC" in payload: latest_telemetry["meja1"]["ec"] = round(float(payload["m1_EC"]), 1)
             if "m1_pH" in payload: latest_telemetry["meja1"]["ph"] = round(float(payload["m1_pH"]) / 10.0, 1)
             
             # Parsing Data Meja 2
-            if "m2_suhu" in payload: latest_telemetry["meja2"]["suhu"] = round(float(payload["m2_suhu"]) / 10.0, 1)
-            if "m2_kelembapan" in payload: latest_telemetry["meja2"]["kelembapan"] = round(float(payload["m2_kelembapan"]) / 10.0, 1)
-            if "m2_EC" in payload: latest_telemetry["meja2"]["ec"] = round(float(payload["m2_EC"]) / 10.0, 1)
+            if "m2_Suhu" in payload: latest_telemetry["meja2"]["suhu"] = round(float(payload["m2_Suhu"]) / 10.0, 1)
+            if "m2_Moist" in payload: latest_telemetry["meja2"]["kelembapan"] = round(float(payload["m2_Moist"]) / 10.0, 1)
+            if "m2_EC" in payload: latest_telemetry["meja2"]["ec"] = round(float(payload["m2_EC"]), 1)
             if "m2_pH" in payload: latest_telemetry["meja2"]["ph"] = round(float(payload["m2_pH"]) / 10.0, 1)
             
             # Parsing Data Meja 3
-            if "m3_suhu" in payload: latest_telemetry["meja3"]["suhu"] = round(float(payload["m3_suhu"]) / 10.0, 1)
-            if "m3_kelembapan" in payload: latest_telemetry["meja3"]["kelembapan"] = round(float(payload["m3_kelembapan"]) / 10.0, 1)
-            if "m3_EC" in payload: latest_telemetry["meja3"]["ec"] = round(float(payload["m3_EC"]) / 10.0, 1)
+            if "m3_Suhu" in payload: latest_telemetry["meja3"]["suhu"] = round(float(payload["m3_Suhu"]) / 10.0, 1)
+            if "m3_Moist" in payload: latest_telemetry["meja3"]["kelembapan"] = round(float(payload["m3_Moist"]) / 10.0, 1)
+            if "m3_EC" in payload: latest_telemetry["meja3"]["ec"] = round(float(payload["m3_EC"]), 1)
             if "m3_pH" in payload: latest_telemetry["meja3"]["ph"] = round(float(payload["m3_pH"]) / 10.0, 1)
             
         elif topic in [TOPIC_SP_SENSOR_PUB, TOPIC_SP_SENSOR_REC]:

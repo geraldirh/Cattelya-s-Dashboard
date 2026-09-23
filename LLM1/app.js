@@ -523,17 +523,17 @@
 
                 setMetricText('vM1Suhu', vals.meja1.suhu, '°C');
                 setMetricText('vM1Humid', vals.meja1.kelembapan, '%');
-                updateGauge('cM1EC', 'vM1EC', vals.meja1.ec, 0, 15, '');
+                updateGauge('cM1EC', 'vM1EC', vals.meja1.ec, 0, 130, '');
                 updateGauge('cM1pH', 'vM1pH', vals.meja1.ph, 0, 14, '');
 
                 setMetricText('vM2Suhu', vals.meja2.suhu, '°C');
                 setMetricText('vM2Humid', vals.meja2.kelembapan, '%');
-                updateGauge('cM2EC', 'vM2EC', vals.meja2.ec, 0, 15, '');
+                updateGauge('cM2EC', 'vM2EC', vals.meja2.ec, 0, 130, '');
                 updateGauge('cM2pH', 'vM2pH', vals.meja2.ph, 0, 14, '');
 
                 setMetricText('vM3Suhu', vals.meja3.suhu, '°C');
                 setMetricText('vM3Humid', vals.meja3.kelembapan, '%');
-                updateGauge('cM3EC', 'vM3EC', vals.meja3.ec, 0, 15, '');
+                updateGauge('cM3EC', 'vM3EC', vals.meja3.ec, 0, 130, '');
                 updateGauge('cM3pH', 'vM3pH', vals.meja3.ph, 0, 14, '');
 
                 // AI summary
@@ -923,22 +923,23 @@
             // Default Meja 1 (Suhu & Moisture text, EC & pH gauge)
             setMetricText('vM1Suhu', 23.5, '°C');
             setMetricText('vM1Humid', 71, '%');
-            updateGauge('cM1EC', 'vM1EC', 1.20, 0, 15, '');
+            updateGauge('cM1EC', 'vM1EC', 1.20, 0, 130, '');
             updateGauge('cM1pH', 'vM1pH', 6.5, 0, 14, '');
 
             // Default Meja 2
             setMetricText('vM2Suhu', 23.8, '°C');
             setMetricText('vM2Humid', 68, '%');
-            updateGauge('cM2EC', 'vM2EC', 1.10, 0, 15, '');
+            updateGauge('cM2EC', 'vM2EC', 1.10, 0, 130, '');
             updateGauge('cM2pH', 'vM2pH', 6.2, 0, 14, '');
 
             // Default Meja 3
             setMetricText('vM3Suhu', 24.1, '°C');
             setMetricText('vM3Humid', 75, '%');
-            updateGauge('cM3EC', 'vM3EC', 1.40, 0, 15, '');
+            updateGauge('cM3EC', 'vM3EC', 1.40, 0, 130, '');
             updateGauge('cM3pH', 'vM3pH', 6.7, 0, 14, '');
 
             // Polling telemetry real-time
+            fetchRealTimeTelemetry();
             setInterval(fetchRealTimeTelemetry, 30000);
 
             // Cuaca awal dan berkala
@@ -1021,7 +1022,7 @@
                     if (data.meja1) {
                         setMetricText('vM1Suhu', data.meja1.suhu, '°C');
                         setMetricText('vM1Humid', data.meja1.kelembapan, '%');
-                        updateGauge('cM1EC', 'vM1EC', data.meja1.ec, 0, 15, '');
+                        updateGauge('cM1EC', 'vM1EC', data.meja1.ec, 0, 130, '');
                         updateGauge('cM1pH', 'vM1pH', data.meja1.ph, 0, 14, '');
                     }
 
@@ -1029,7 +1030,7 @@
                     if (data.meja2) {
                         setMetricText('vM2Suhu', data.meja2.suhu, '°C');
                         setMetricText('vM2Humid', data.meja2.kelembapan, '%');
-                        updateGauge('cM2EC', 'vM2EC', data.meja2.ec, 0, 15, '');
+                        updateGauge('cM2EC', 'vM2EC', data.meja2.ec, 0, 130, '');
                         updateGauge('cM2pH', 'vM2pH', data.meja2.ph, 0, 14, '');
                     }
 
@@ -1037,7 +1038,7 @@
                     if (data.meja3) {
                         setMetricText('vM3Suhu', data.meja3.suhu, '°C');
                         setMetricText('vM3Humid', data.meja3.kelembapan, '%');
-                        updateGauge('cM3EC', 'vM3EC', data.meja3.ec, 0, 15, '');
+                        updateGauge('cM3EC', 'vM3EC', data.meja3.ec, 0, 130, '');
                         updateGauge('cM3pH', 'vM3pH', data.meja3.ph, 0, 14, '');
                     }
                 }
