@@ -351,12 +351,12 @@ app.add_middleware(
 )
 
 # Serve static files (gambar background, dll) dari direktori project
-app.mount("/static", StaticFiles(directory=os.path.dirname(os.path.abspath(__file__))), name="static")
+app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), "public")), name="static")
 
 # Route untuk menampilkan halaman utama (Frontend)
 @app.get("/", response_class=HTMLResponse)
 async def read_index():
-    index_path = os.path.join(os.path.dirname(__file__), "index.html")
+    index_path = os.path.join(os.path.dirname(__file__), "public", "index.html")
     if not os.path.exists(index_path):
         return "<h3>File index.html tidak ditemukan.</h3>"
     with open(index_path, "r", encoding="utf-8") as f:
