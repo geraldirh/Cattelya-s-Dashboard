@@ -38,17 +38,17 @@ TOPIC_CONTROL_NUTRISI = os.getenv("TOPIC_CONTROL_NUTRISI", "inianggrek/control/n
 TOPIC_CONTROL_EXHAUST = os.getenv("TOPIC_CONTROL_EXHAUST", "inianggrek/control/exhaust")
 TOPIC_THRESHOLDS = os.getenv("TOPIC_THRESHOLDS", "inianggrek/thresholds")
 
-TOPIC_SP_SENSOR_PUB = os.getenv("TOPIC_SP_SENSOR_PUB", "inianggrek/sp/outsensor")
-TOPIC_SP_SENSOR_SUB = os.getenv("TOPIC_SP_SENSOR_SUB", "inianggrek/sp/sensor")
-TOPIC_SP_SENSOR_REC = os.getenv("TOPIC_SP_SENSOR_REC", "inianggrek/sp/stsensor")
+TOPIC_SP_SENSOR_PUB = os.getenv("TOPIC_SP_SENSOR_PUB", "inianggrek/sp/sensor")
+TOPIC_SP_SENSOR_SUB = os.getenv("TOPIC_SP_SENSOR_SUB", "inianggrek/sp/sensorweb")
+TOPIC_SP_SENSOR_REC = os.getenv("TOPIC_SP_SENSOR_REC", "inianggrek/sp/sensorstatus")
 
-TOPIC_SP_NUTRISI_PUB = os.getenv("TOPIC_SP_NUTRISI_PUB", "inianggrek/sp/outnutrisi")
-TOPIC_SP_NUTRISI_SUB = os.getenv("TOPIC_SP_NUTRISI_SUB", "inianggrek/sp/nutrisi")
-TOPIC_SP_NUTRISI_REC = os.getenv("TOPIC_SP_NUTRISI_REC", "inianggrek/sp/stnutrisi")
+TOPIC_SP_NUTRISI_PUB = os.getenv("TOPIC_SP_NUTRISI_PUB", "inianggrek/sp/nutrisi")
+TOPIC_SP_NUTRISI_SUB = os.getenv("TOPIC_SP_NUTRISI_SUB", "inianggrek/sp/nutrisiweb")
+TOPIC_SP_NUTRISI_REC = os.getenv("TOPIC_SP_NUTRISI_REC", "inianggrek/sp/nutrisistatus")
 
-TOPIC_SP_DURASI_PUB = os.getenv("TOPIC_SP_DURASI_PUB", "inianggrek/sp/outdurasi")
-TOPIC_SP_DURASI_SUB = os.getenv("TOPIC_SP_DURASI_SUB", "inianggrek/sp/durasi")
-TOPIC_SP_DURASI_REC = os.getenv("TOPIC_SP_DURASI_REC", "inianggrek/sp/stdurasi")
+TOPIC_SP_DURASI_PUB = os.getenv("TOPIC_SP_DURASI_PUB", "inianggrek/sp/durasi")
+TOPIC_SP_DURASI_SUB = os.getenv("TOPIC_SP_DURASI_SUB", "inianggrek/sp/durasiweb")
+TOPIC_SP_DURASI_REC = os.getenv("TOPIC_SP_DURASI_REC", "inianggrek/sp/durasistatus")
 
 # Konfigurasi Topik MQTT (Status dari PLC)
 TOPIC_STATUS_MODE = os.getenv("TOPIC_STATUS_MODE", "inianggrek/control/modeout")
