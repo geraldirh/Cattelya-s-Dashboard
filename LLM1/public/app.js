@@ -626,7 +626,35 @@
                     }
                 });
 
-                const labels = logs.map(l => l.timestamp.includes(' ') ? l.timestamp.split(' ')[1] : l.timestamp);
+                
+                // Fix chronological order (reverse the descending logs from backend)
+                logs.reverse();
+
+                // Simple Moving Average function to filter noise
+                const movingAverage = (arr, windowSize = 3) => {
+                    let res = [];
+                    for (let i = 0; i < arr.length; i++) {
+                        let sum = 0, count = 0;
+                        for (let j = Math.max(0, i - windowSize + 1); j <= i; j++) {
+                            sum += arr[j];
+                            count++;
+                        }
+                        res.push(Number((sum / count).toFixed(2)));
+                    }
+                    return res;
+                };
+
+                const labels = logs.map(l => {
+                    try {
+                        const d = new Date(l.timestamp);
+                        if (!isNaN(d)) {
+                            return d.toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit'}) + ' ' + 
+                                   d.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'});
+                        }
+                    } catch(e) {}
+                    return l.timestamp.includes(' ') ? l.timestamp.split(' ')[1] : l.timestamp;
+                });
+
                 
                 const commonOptions = {
                     chart: { height: 180, type: 'area', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, sparkline: { enabled: false } },
@@ -714,10 +742,16 @@
                     return Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2));
                 };
 
-                const soilSuhu = logs.map(l => getAvg(l, 'suhu'));
-                const soilHumid = logs.map(l => getAvg(l, 'kelembapan'));
-                const soilPh = logs.map(l => getAvg(l, 'ph'));
-                const soilEc = logs.map(l => getAvg(l, 'ec'));
+                let soilSuhu = logs.map(l => getAvg(l, 'suhu'));
+                let soilHumid = logs.map(l => getAvg(l, 'kelembapan'));
+                let soilPh = logs.map(l => getAvg(l, 'ph'));
+                let soilEc = logs.map(l => getAvg(l, 'ec'));
+
+                // Apply MA Filter
+                soilSuhu = movingAverage(soilSuhu, 3);
+                soilHumid = movingAverage(soilHumid, 3);
+                soilPh = movingAverage(soilPh, 3);
+                soilEc = movingAverage(soilEc, 3);
 
                 updateStats('soil-suhu', soilSuhu, '°C');
                 renderSparkline('#chart-soil-suhu', soilSuhu, '#f97316');
@@ -739,16 +773,18 @@
                     if (el._chart) { el._chart.destroy(); }
                     
                     const opt = {
-                        chart: { height: 250, type: 'line', fontFamily: 'Inter, sans-serif', toolbar: { show: false } },
+                        chart: { height: 270, type: 'line', fontFamily: 'Inter, sans-serif', toolbar: { show: true, tools: { zoom: true, pan: true, download: false } } },
                         series: series,
                         colors: colors,
                         dataLabels: { enabled: false },
-                        stroke: { curve: 'smooth', width: [2, 0] },
-                        fill: { type: ['gradient', 'solid'], gradient: { shadeIntensity: 1, opacityFrom: 0.5, opacityTo: 0.05, stops: [0, 100] } },
-                        xaxis: { categories: labels, labels: { style: { colors: '#94a3b8' } }, axisBorder: { show: false }, axisTicks: { show: false }, tickAmount: 10 },
+                        stroke: { curve: 'smooth', width: [2, 2] },
+                        fill: { type: ['solid', 'solid'], opacity: [0.15, 0.15] },
+                        grid: { show: true, borderColor: '#e2e8f0', strokeDashArray: 4, xaxis: { lines: { show: true } }, yaxis: { lines: { show: true } } },
+                        xaxis: { categories: labels, labels: { style: { colors: '#94a3b8', fontSize: '10px' }, rotate: -45 }, axisBorder: { show: true, color: '#e2e8f0' }, axisTicks: { show: true }, tickAmount: 8, title: { text: 'Waktu', style: { color: '#94a3b8', fontWeight: 500 } } },
                         yaxis: yaxisOptions,
-                        legend: { position: 'bottom', horizontalAlign: 'center' },
-                        tooltip: { theme: 'light' }
+                        legend: { position: 'bottom', horizontalAlign: 'center', itemMargin: { horizontal: 10, vertical: 5 } },
+                        tooltip: { theme: 'light', shared: true, intersect: false, x: { show: true } },
+                        title: { text: 'Data difilter (Moving Average 3)', align: 'left', style: { fontSize: '10px', color: '#94a3b8', fontWeight: 'normal' } }
                     };
                     el._chart = new ApexCharts(el, opt);
                     el._chart.render();
@@ -756,19 +792,19 @@
 
                 renderComparison('#chart-comp-tanah', [
                     { name: 'Suhu Tanah (°C)', type: 'area', data: soilSuhu },
-                    { name: 'Kelembapan Tanah (%)', type: 'area', data: soilHumid } // Image 1 left chart uses Line + Line
+                    { name: 'Kelembapan Tanah (%)', type: 'area', data: soilHumid }
                 ], [
-                    { seriesName: 'Suhu Tanah (°C)', labels: { style: { colors: '#f97316' } } },
-                    { seriesName: 'Kelembapan Tanah (%)', opposite: true, labels: { style: { colors: '#0ea5e9' } } }
+                    { seriesName: 'Suhu Tanah (°C)', title: { text: 'Suhu (°C)', style: { color: '#f97316' } }, labels: { style: { colors: '#f97316' }, formatter: (v) => v.toFixed(1) } },
+                    { seriesName: 'Kelembapan Tanah (%)', opposite: true, title: { text: 'Kelembapan (%)', style: { color: '#0ea5e9' } }, labels: { style: { colors: '#0ea5e9' }, formatter: (v) => v.toFixed(1) } }
                 ], ['#f97316', '#0ea5e9']);
 
                 renderComparison('#chart-comp-ph', [
                     { name: 'pH', type: 'area', data: soilPh },
-                    { name: 'Conductivity (mS/cm)', type: 'area', data: soilEc } // Image 1 right chart uses Line + Bar
+                    { name: 'Conductivity (mS/cm)', type: 'area', data: soilEc }
                 ], [
-                    { seriesName: 'pH', labels: { style: { colors: '#ec4899' } } },
-                    { seriesName: 'Conductivity (mS/cm)', opposite: true, labels: { style: { colors: '#ef4444' } } }
-                ], ['#ec4899', '#ef4444']);
+                    { seriesName: 'pH', title: { text: 'pH', style: { color: '#ec4899' } }, labels: { style: { colors: '#ec4899' }, formatter: (v) => v.toFixed(2) } },
+                    { seriesName: 'Conductivity (mS/cm)', opposite: true, title: { text: 'Conductivity (mS/cm)', style: { color: '#14b8a6' } }, labels: { style: { colors: '#14b8a6' }, formatter: (v) => v.toFixed(2) } }
+                ], ['#ec4899', '#14b8a6']);
 
 } catch (e) { console.error('Logger error:', e); }
         }
