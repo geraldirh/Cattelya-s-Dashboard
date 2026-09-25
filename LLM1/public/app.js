@@ -655,8 +655,44 @@
                     return l.timestamp.includes(' ') ? l.timestamp.split(' ')[1] : l.timestamp;
                 });
 
-                
-                
+                // Environment data series
+                let envSuhu = logs.map(l => l.air_temperature != null ? Number(l.air_temperature) : 0);
+                let envHumid = logs.map(l => l.air_humidity != null ? Number(l.air_humidity) : 0);
+                let envLux = logs.map(l => l.lux != null ? Number(l.lux) : 0);
+
+                // Filter environment data
+                envSuhu = movingAverage(envSuhu, 3);
+                envHumid = movingAverage(envHumid, 3);
+                envLux = movingAverage(envLux, 3);
+
+                // Helper for soil average across tables
+                const getAvg = (l, param) => {
+                    const vals = [];
+                    const parseAndPush = (val) => {
+                        const num = parseFloat(val);
+                        if (!isNaN(num)) {
+                            if (param === 'ph' && (num <= 0 || num > 14)) return;
+                            vals.push(num);
+                        }
+                    };
+                    if (l.meja1 && l.meja1[param] !== undefined) parseAndPush(l.meja1[param]);
+                    if (l.meja2 && l.meja2[param] !== undefined) parseAndPush(l.meja2[param]);
+                    if (l.meja3 && l.meja3[param] !== undefined) parseAndPush(l.meja3[param]);
+                    if (vals.length === 0) return 0;
+                    return Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2));
+                };
+
+                let soilSuhu = logs.map(l => getAvg(l, 'suhu'));
+                let soilHumid = logs.map(l => getAvg(l, 'kelembapan'));
+                let soilPh = logs.map(l => getAvg(l, 'ph'));
+                let soilEc = logs.map(l => getAvg(l, 'ec'));
+
+                // Filter soil data
+                soilSuhu = movingAverage(soilSuhu, 3);
+                soilHumid = movingAverage(soilHumid, 3);
+                soilPh = movingAverage(soilPh, 3);
+                soilEc = movingAverage(soilEc, 3);
+
                 // --- MASTER CHART RENDERING LOGIC ---
                 const renderMasterChart = () => {
                     const selector = document.getElementById('mainChartSelector');
@@ -671,37 +707,37 @@
                     let strokeWidth = [];
                     
                     // Single Parameter Configurations
-                    if(selection === 'envSuhu') {
+                    if (selection === 'envSuhu') {
                         series = [{ name: 'Suhu Lingkungan (°C)', type: 'area', data: envSuhu }];
                         yaxisOptions = [{ title: { text: 'Suhu (°C)', style: { color: '#8b5cf6' } }, labels: { style: { colors: '#8b5cf6' }, formatter: v => v.toFixed(1) } }];
                         colors = ['#8b5cf6']; strokeWidth = [2];
-                    } else if(selection === 'envHumid') {
+                    } else if (selection === 'envHumid') {
                         series = [{ name: 'Kelembapan Lingkungan (%)', type: 'area', data: envHumid }];
                         yaxisOptions = [{ title: { text: 'Kelembapan (%)', style: { color: '#10b981' } }, labels: { style: { colors: '#10b981' }, formatter: v => v.toFixed(1) } }];
                         colors = ['#10b981']; strokeWidth = [2];
-                    } else if(selection === 'envLux') {
+                    } else if (selection === 'envLux') {
                         series = [{ name: 'Cahaya (Lux)', type: 'area', data: envLux }];
                         yaxisOptions = [{ title: { text: 'Cahaya (Lux)', style: { color: '#eab308' } }, labels: { style: { colors: '#eab308' }, formatter: v => v.toFixed(0) } }];
                         colors = ['#eab308']; strokeWidth = [2];
-                    } else if(selection === 'soilSuhu') {
+                    } else if (selection === 'soilSuhu') {
                         series = [{ name: 'Suhu Tanah (°C)', type: 'area', data: soilSuhu }];
                         yaxisOptions = [{ title: { text: 'Suhu (°C)', style: { color: '#f97316' } }, labels: { style: { colors: '#f97316' }, formatter: v => v.toFixed(1) } }];
                         colors = ['#f97316']; strokeWidth = [2];
-                    } else if(selection === 'soilHumid') {
+                    } else if (selection === 'soilHumid') {
                         series = [{ name: 'Kelembapan Tanah (%)', type: 'area', data: soilHumid }];
                         yaxisOptions = [{ title: { text: 'Kelembapan (%)', style: { color: '#0ea5e9' } }, labels: { style: { colors: '#0ea5e9' }, formatter: v => v.toFixed(1) } }];
                         colors = ['#0ea5e9']; strokeWidth = [2];
-                    } else if(selection === 'soilPh') {
-                        series = [{ name: 'pH', type: 'area', data: soilPh }];
+                    } else if (selection === 'soilPh') {
+                        series = [{ name: 'pH Tanah', type: 'area', data: soilPh }];
                         yaxisOptions = [{ title: { text: 'pH', style: { color: '#ec4899' } }, labels: { style: { colors: '#ec4899' }, formatter: v => v.toFixed(2) } }];
                         colors = ['#ec4899']; strokeWidth = [2];
-                    } else if(selection === 'soilEc') {
+                    } else if (selection === 'soilEc') {
                         series = [{ name: 'Conductivity (mS/cm)', type: 'area', data: soilEc }];
                         yaxisOptions = [{ title: { text: 'Conductivity (mS/cm)', style: { color: '#14b8a6' } }, labels: { style: { colors: '#14b8a6' }, formatter: v => v.toFixed(2) } }];
                         colors = ['#14b8a6']; strokeWidth = [2];
                     } 
                     // Comparison Configurations
-                    else if(selection === 'compEnv') {
+                    else if (selection === 'compEnv') {
                         series = [
                             { name: 'Suhu Lingkungan (°C)', type: 'area', data: envSuhu },
                             { name: 'Kelembapan Lingkungan (%)', type: 'area', data: envHumid }
@@ -711,8 +747,7 @@
                             { seriesName: 'Kelembapan Lingkungan (%)', opposite: true, title: { text: 'Kelembapan (%)', style: { color: '#10b981' } }, labels: { style: { colors: '#10b981' }, formatter: v => v.toFixed(1) } }
                         ];
                         colors = ['#8b5cf6', '#10b981']; strokeWidth = [2, 2];
-                    }
-                    else if(selection === 'compSoil') {
+                    } else if (selection === 'compSoil') {
                         series = [
                             { name: 'Suhu Tanah (°C)', type: 'area', data: soilSuhu },
                             { name: 'Kelembapan Tanah (%)', type: 'area', data: soilHumid }
@@ -722,8 +757,7 @@
                             { seriesName: 'Kelembapan Tanah (%)', opposite: true, title: { text: 'Kelembapan (%)', style: { color: '#0ea5e9' } }, labels: { style: { colors: '#0ea5e9' }, formatter: v => v.toFixed(1) } }
                         ];
                         colors = ['#f97316', '#0ea5e9']; strokeWidth = [2, 2];
-                    }
-                    else if(selection === 'compPhEc') {
+                    } else if (selection === 'compPhEc') {
                         series = [
                             { name: 'pH', type: 'area', data: soilPh },
                             { name: 'Conductivity (mS/cm)', type: 'area', data: soilEc }
@@ -754,7 +788,7 @@
                     el._chart.render();
                 };
 
-                // Add event listener to dropdown, storing a reference to ensure we don't duplicate
+                // Add event listener to dropdown
                 const selector = document.getElementById('mainChartSelector');
                 if (selector) {
                     selector.onchange = renderMasterChart;
@@ -762,75 +796,8 @@
                 
                 // Initial render
                 renderMasterChart();
-                
-                // --- END MASTER CHART RENDERING LOGIC ---
-if (l.meja2 && l.meja2[param] !== undefined) parseAndPush(l.meja2[param]);
-                    if (l.meja3 && l.meja3[param] !== undefined) parseAndPush(l.meja3[param]);
-                    if (vals.length === 0) return 0;
-                    return Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2));
-                };
 
-                let soilSuhu = logs.map(l => getAvg(l, 'suhu'));
-                let soilHumid = logs.map(l => getAvg(l, 'kelembapan'));
-                let soilPh = logs.map(l => getAvg(l, 'ph'));
-                let soilEc = logs.map(l => getAvg(l, 'ec'));
-
-                // Apply MA Filter
-                soilSuhu = movingAverage(soilSuhu, 3);
-                soilHumid = movingAverage(soilHumid, 3);
-                soilPh = movingAverage(soilPh, 3);
-                soilEc = movingAverage(soilEc, 3);
-
-                renderSparkline('#chart-soil-suhu', soilSuhu, '#f97316');
-
-                renderSparkline('#chart-soil-humid', soilHumid, '#0ea5e9');
-
-                renderSparkline('#chart-soil-ph', soilPh, '#ec4899');
-
-                renderSparkline('#chart-soil-ec', soilEc, '#ef4444');
-
-
-                // --- 3. COMPARISON CHARTS ---
-                const renderComparison = (selector, series, yaxisOptions, colors) => {
-                    const el = document.querySelector(selector);
-                    if (!el) return;
-                    if (el._chart) { el._chart.destroy(); }
-                    
-                    const opt = {
-                        chart: { height: 270, type: 'line', fontFamily: 'Inter, sans-serif', toolbar: { show: true, tools: { zoom: true, pan: true, download: false } } },
-                        series: series,
-                        colors: colors,
-                        dataLabels: { enabled: false },
-                        stroke: { curve: 'smooth', width: [2, 2] },
-                        fill: { type: ['solid', 'solid'], opacity: [0.15, 0.15] },
-                        grid: { show: true, borderColor: '#e2e8f0', strokeDashArray: 4, xaxis: { lines: { show: true } }, yaxis: { lines: { show: true } } },
-                        xaxis: { categories: labels, labels: { style: { colors: '#94a3b8', fontSize: '10px' }, rotate: -45 }, axisBorder: { show: true, color: '#e2e8f0' }, axisTicks: { show: true }, tickAmount: 8, title: { text: 'Waktu', style: { color: '#94a3b8', fontWeight: 500 } } },
-                        yaxis: yaxisOptions,
-                        legend: { position: 'bottom', horizontalAlign: 'center', itemMargin: { horizontal: 10, vertical: 5 } },
-                        tooltip: { theme: 'light', shared: true, intersect: false, x: { show: true } },
-                        title: { text: 'Data difilter (Moving Average 3)', align: 'left', style: { fontSize: '10px', color: '#94a3b8', fontWeight: 'normal' } }
-                    };
-                    el._chart = new ApexCharts(el, opt);
-                    el._chart.render();
-                };
-
-                renderComparison('#chart-comp-tanah', [
-                    { name: 'Suhu Tanah (°C)', type: 'area', data: soilSuhu },
-                    { name: 'Kelembapan Tanah (%)', type: 'area', data: soilHumid }
-                ], [
-                    { seriesName: 'Suhu Tanah (°C)', title: { text: 'Suhu (°C)', style: { color: '#f97316' } }, labels: { style: { colors: '#f97316' }, formatter: (v) => v.toFixed(1) } },
-                    { seriesName: 'Kelembapan Tanah (%)', opposite: true, title: { text: 'Kelembapan (%)', style: { color: '#0ea5e9' } }, labels: { style: { colors: '#0ea5e9' }, formatter: (v) => v.toFixed(1) } }
-                ], ['#f97316', '#0ea5e9']);
-
-                renderComparison('#chart-comp-ph', [
-                    { name: 'pH', type: 'area', data: soilPh },
-                    { name: 'Conductivity (mS/cm)', type: 'area', data: soilEc }
-                ], [
-                    { seriesName: 'pH', title: { text: 'pH', style: { color: '#ec4899' } }, labels: { style: { colors: '#ec4899' }, formatter: (v) => v.toFixed(2) } },
-                    { seriesName: 'Conductivity (mS/cm)', opposite: true, title: { text: 'Conductivity (mS/cm)', style: { color: '#14b8a6' } }, labels: { style: { colors: '#14b8a6' }, formatter: (v) => v.toFixed(2) } }
-                ], ['#ec4899', '#14b8a6']);
-
-} catch (e) { console.error('Logger error:', e); }
+            } catch (e) { console.error('Logger error:', e); }
         }
 
         function unlockSecretConfig() {
