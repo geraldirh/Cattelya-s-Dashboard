@@ -755,16 +755,16 @@
                 };
 
                 renderComparison('#chart-comp-tanah', [
-                    { name: 'Suhu Tanah (°C)', type: 'line', data: soilSuhu },
-                    { name: 'Kelembapan Tanah (%)', type: 'line', data: soilHumid } // Image 1 left chart uses Line + Line
+                    { name: 'Suhu Tanah (°C)', type: 'area', data: soilSuhu },
+                    { name: 'Kelembapan Tanah (%)', type: 'area', data: soilHumid } // Image 1 left chart uses Line + Line
                 ], [
                     { seriesName: 'Suhu Tanah (°C)', labels: { style: { colors: '#f97316' } } },
                     { seriesName: 'Kelembapan Tanah (%)', opposite: true, labels: { style: { colors: '#0ea5e9' } } }
                 ], ['#f97316', '#0ea5e9']);
 
                 renderComparison('#chart-comp-ph', [
-                    { name: 'pH', type: 'line', data: soilPh },
-                    { name: 'Conductivity (mS/cm)', type: 'bar', data: soilEc } // Image 1 right chart uses Line + Bar
+                    { name: 'pH', type: 'area', data: soilPh },
+                    { name: 'Conductivity (mS/cm)', type: 'area', data: soilEc } // Image 1 right chart uses Line + Bar
                 ], [
                     { seriesName: 'pH', labels: { style: { colors: '#ec4899' } } },
                     { seriesName: 'Conductivity (mS/cm)', opposite: true, labels: { style: { colors: '#ef4444' } } }
