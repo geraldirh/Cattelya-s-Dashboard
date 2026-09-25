@@ -627,8 +627,83 @@
                 });
 
                 
-                // Fix chronological order (reverse the descending logs from backend)
-                logs.reverse();
+                // Helper to safely parse timestamp formats (ISO, YYYY-MM-DD, DD-MM-YYYY, HH:MM:SS)
+                const parseTimestamp = (ts) => {
+                    if (!ts) return null;
+                    if (typeof ts === 'string' && ts.includes('-')) {
+                        const parts = ts.trim().split(' ');
+                        const dateParts = parts[0].split('-');
+                        if (dateParts[0].length === 2 && dateParts[2].length === 4) {
+                            return new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T${parts[1] || '00:00:00'}`);
+                        }
+                    }
+                    const d = new Date(ts);
+                    return isNaN(d.getTime()) ? null : d;
+                };
+
+                // Ensure data for charts is strictly sorted from oldest (left) to newest (right)
+                const chartLogs = [...logs].sort((a, b) => {
+                    const da = parseTimestamp(a.timestamp);
+                    const db = parseTimestamp(b.timestamp);
+                    if (da && db) return da.getTime() - db.getTime();
+                    return (a.timestamp || '').localeCompare(b.timestamp || '');
+                });
+
+                const labels = chartLogs.map(l => {
+                    const d = parseTimestamp(l.timestamp);
+                    if (d && !isNaN(d.getTime())) {
+                        const dd = String(d.getDate()).padStart(2, '0');
+                        const mm = String(d.getMonth() + 1).padStart(2, '0');
+                        const hh = String(d.getHours()).padStart(2, '0');
+                        const mi = String(d.getMinutes()).padStart(2, '0');
+                        return `${dd}/${mm} ${hh}:${mi}`;
+                    }
+                    return l.timestamp && l.timestamp.includes(' ') ? l.timestamp.split(' ')[1] : (l.timestamp || '-');
+                });
+
+                // Filter for sudden impulse anomalies / spikes that drop/jump and return to normal
+                const despikeFilter = (arr, minSpikeThreshold = 2.0) => {
+                    if (!arr || arr.length < 3) return arr;
+                    const res = [...arr];
+                    
+                    // 1-point spike removal (e.g. baseline -> spike -> baseline)
+                    for (let i = 1; i < res.length - 1; i++) {
+                        const prev = res[i - 1];
+                        const curr = res[i];
+                        const nxt = res[i + 1];
+                        const dPrev = curr - prev;
+                        const dNext = curr - nxt;
+                        
+                        if (dPrev * dNext > 0) {
+                            const neighborDiff = Math.abs(prev - nxt);
+                            const spikeMag = Math.min(Math.abs(dPrev), Math.abs(dNext));
+                            if (spikeMag > Math.max(neighborDiff * 1.8, minSpikeThreshold)) {
+                                res[i] = Number(((prev + nxt) / 2).toFixed(2));
+                            }
+                        }
+                    }
+                    
+                    // 2-point spike removal (glitch lasting 2 consecutive samples)
+                    for (let i = 1; i < res.length - 2; i++) {
+                        const prev = res[i - 1];
+                        const c1 = res[i];
+                        const c2 = res[i + 1];
+                        const nxt = res[i + 2];
+                        const d1 = c1 - prev;
+                        const d2 = c2 - nxt;
+                        const bridgeDiff = Math.abs(prev - nxt);
+                        
+                        if (d1 * d2 > 0 && Math.abs(c1 - c2) < Math.max(Math.abs(d1), Math.abs(d2)) * 0.6) {
+                            const spikeMag = Math.min(Math.abs(d1), Math.abs(d2));
+                            if (spikeMag > Math.max(bridgeDiff * 1.8, minSpikeThreshold)) {
+                                res[i] = Number((prev + (nxt - prev) * (1 / 3)).toFixed(2));
+                                res[i + 1] = Number((prev + (nxt - prev) * (2 / 3)).toFixed(2));
+                            }
+                        }
+                    }
+                    
+                    return res;
+                };
 
                 // Simple Moving Average function to filter noise
                 const movingAverage = (arr, windowSize = 3) => {
@@ -644,26 +719,10 @@
                     return res;
                 };
 
-                const labels = logs.map(l => {
-                    try {
-                        const d = new Date(l.timestamp);
-                        if (!isNaN(d)) {
-                            return d.toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit'}) + ' ' + 
-                                   d.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'});
-                        }
-                    } catch(e) {}
-                    return l.timestamp.includes(' ') ? l.timestamp.split(' ')[1] : l.timestamp;
-                });
-
-                // Environment data series
-                let envSuhu = logs.map(l => l.air_temperature != null ? Number(l.air_temperature) : 0);
-                let envHumid = logs.map(l => l.air_humidity != null ? Number(l.air_humidity) : 0);
-                let envLux = logs.map(l => l.lux != null ? Number(l.lux) : 0);
-
-                // Filter environment data
-                envSuhu = movingAverage(envSuhu, 3);
-                envHumid = movingAverage(envHumid, 3);
-                envLux = movingAverage(envLux, 3);
+                // Pipeline: Despike Anomaly Filter -> Moving Average Smoother
+                const cleanSensorData = (arr, threshold = 2.0) => {
+                    return movingAverage(despikeFilter(arr, threshold), 3);
+                };
 
                 // Helper for soil average across tables
                 const getAvg = (l, param) => {
@@ -682,16 +741,16 @@
                     return Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2));
                 };
 
-                let soilSuhu = logs.map(l => getAvg(l, 'suhu'));
-                let soilHumid = logs.map(l => getAvg(l, 'kelembapan'));
-                let soilPh = logs.map(l => getAvg(l, 'ph'));
-                let soilEc = logs.map(l => getAvg(l, 'ec'));
+                // Cleaned Environment Data Series
+                const envSuhu = cleanSensorData(chartLogs.map(l => l.air_temperature != null ? Number(l.air_temperature) : 0), 2.0);
+                const envHumid = cleanSensorData(chartLogs.map(l => l.air_humidity != null ? Number(l.air_humidity) : 0), 4.0);
+                const envLux = cleanSensorData(chartLogs.map(l => l.lux != null ? Number(l.lux) : 0), 400.0);
 
-                // Filter soil data
-                soilSuhu = movingAverage(soilSuhu, 3);
-                soilHumid = movingAverage(soilHumid, 3);
-                soilPh = movingAverage(soilPh, 3);
-                soilEc = movingAverage(soilEc, 3);
+                // Cleaned Soil Data Series
+                const soilSuhu = cleanSensorData(chartLogs.map(l => getAvg(l, 'suhu')), 1.5);
+                const soilHumid = cleanSensorData(chartLogs.map(l => getAvg(l, 'kelembapan')), 3.0);
+                const soilPh = cleanSensorData(chartLogs.map(l => getAvg(l, 'ph')), 0.3);
+                const soilEc = cleanSensorData(chartLogs.map(l => getAvg(l, 'ec')), 0.25);
 
                 // --- MASTER CHART RENDERING LOGIC ---
                 const renderMasterChart = () => {
@@ -781,7 +840,7 @@
                         yaxis: yaxisOptions,
                         legend: { position: 'bottom', horizontalAlign: 'center', itemMargin: { horizontal: 15, vertical: 5 }, markers: { radius: 12 } },
                         tooltip: { theme: 'light', shared: true, intersect: false, x: { show: true } },
-                        title: { text: 'Data difilter (Moving Average 3)', align: 'left', style: { fontSize: '11px', color: '#64748b', fontWeight: 'normal' } }
+                        title: { text: 'Filter Aktif: Despike Anomaly & Moving Average', align: 'left', style: { fontSize: '11px', color: '#64748b', fontWeight: 'normal' } }
                     };
                     
                     el._chart = new ApexCharts(el, opt);

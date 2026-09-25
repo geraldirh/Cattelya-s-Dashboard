@@ -702,10 +702,10 @@ async def get_logs():
                         utc_dt = datetime.datetime.strptime(ts[:19], "%Y-%m-%dT%H:%M:%S")
                         # Tambah 7 jam untuk WIB
                         local_dt = utc_dt + datetime.timedelta(hours=7)
-                        # Format ke string jam:menit:detik
-                        ts = local_dt.strftime("%H:%M:%S")
+                        # Format ke string hari-bulan-tahun jam:menit:detik
+                        ts = local_dt.strftime("%d-%m-%Y %H:%M:%S")
                     except Exception:
-                        ts = ts.split("T")[1][:8]
+                        ts = ts_str
                         
                 formatted_logs.append({
                     "timestamp": ts,
