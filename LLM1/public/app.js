@@ -1082,10 +1082,10 @@
                 if (res.ok) {
                     const data = await res.json();
 
-                    // Cek status koneksi PLC (selisih waktu dalam detik, batas 15s)
+                    // Cek status koneksi PLC (online jika menerima MQTT dalam 5 menit terakhir / 300 detik)
                     const nowSec = Date.now() / 1000;
                     const lastUpdate = data.last_update || 0;
-                    const isOnline = (nowSec - lastUpdate) < 15;
+                    const isOnline = lastUpdate > 0 && (nowSec - lastUpdate) < 300;
                     const plcEl = document.getElementById('plcStatus');
                     const plcText = document.getElementById('plcStatusText');
 

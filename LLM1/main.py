@@ -71,6 +71,10 @@ LOGGING_INTERVAL_SECONDS = 60
 class LogIntervalRequest(BaseModel):
     interval: int
 
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "time": time.time()}
+
 @app.get("/log-interval")
 async def get_log_interval():
     return {"interval": LOGGING_INTERVAL_SECONDS}
@@ -122,6 +126,99 @@ latest_actuators = {
     "mist_ruangan": 0,
     "mode": "auto"
 }
+
+# Buffer & Rekap per Menit
+telemetry_minute_buffer = []
+
+actuator_recap_minute = {
+    "exhaust_fan": 0,
+    "penyiraman_air": 0,
+    "penyiraman_pupuk": 0,
+    "mist_ruangan": 0,
+    "manual_triggered": False
+}
+
+def record_telemetry_snapshot():
+    telemetry_minute_buffer.append({
+        "air_temperature": latest_telemetry.get("air_temperature"),
+        "air_humidity": latest_telemetry.get("air_humidity"),
+        "lux": latest_telemetry.get("lux"),
+        "tds": latest_telemetry.get("tds"),
+        "m1_suhu": latest_telemetry.get("meja1", {}).get("suhu"),
+        "m1_humid": latest_telemetry.get("meja1", {}).get("kelembapan"),
+        "m1_ec": latest_telemetry.get("meja1", {}).get("ec"),
+        "m1_ph": latest_telemetry.get("meja1", {}).get("ph"),
+        "m2_suhu": latest_telemetry.get("meja2", {}).get("suhu"),
+        "m2_humid": latest_telemetry.get("meja2", {}).get("kelembapan"),
+        "m2_ec": latest_telemetry.get("meja2", {}).get("ec"),
+        "m2_ph": latest_telemetry.get("meja2", {}).get("ph"),
+        "m3_suhu": latest_telemetry.get("meja3", {}).get("suhu"),
+        "m3_humid": latest_telemetry.get("meja3", {}).get("kelembapan"),
+        "m3_ec": latest_telemetry.get("meja3", {}).get("ec"),
+        "m3_ph": latest_telemetry.get("meja3", {}).get("ph")
+    })
+
+def process_minute_telemetry():
+    global telemetry_minute_buffer
+    if not telemetry_minute_buffer:
+        return {
+            "air_temperature": latest_telemetry.get("air_temperature"),
+            "air_humidity": latest_telemetry.get("air_humidity"),
+            "lux": latest_telemetry.get("lux"),
+            "tds": latest_telemetry.get("tds"),
+            "m1_suhu": latest_telemetry.get("meja1", {}).get("suhu"),
+            "m1_humid": latest_telemetry.get("meja1", {}).get("kelembapan"),
+            "m1_ec": latest_telemetry.get("meja1", {}).get("ec"),
+            "m1_ph": latest_telemetry.get("meja1", {}).get("ph"),
+            "m2_suhu": latest_telemetry.get("meja2", {}).get("suhu"),
+            "m2_humid": latest_telemetry.get("meja2", {}).get("kelembapan"),
+            "m2_ec": latest_telemetry.get("meja2", {}).get("ec"),
+            "m2_ph": latest_telemetry.get("meja2", {}).get("ph"),
+            "m3_suhu": latest_telemetry.get("meja3", {}).get("suhu"),
+            "m3_humid": latest_telemetry.get("meja3", {}).get("kelembapan"),
+            "m3_ec": latest_telemetry.get("meja3", {}).get("ec"),
+            "m3_ph": latest_telemetry.get("meja3", {}).get("ph")
+        }
+    
+    keys = [
+        "air_temperature", "air_humidity", "lux", "tds",
+        "m1_suhu", "m1_humid", "m1_ec", "m1_ph",
+        "m2_suhu", "m2_humid", "m2_ec", "m2_ph",
+        "m3_suhu", "m3_humid", "m3_ec", "m3_ph"
+    ]
+    aggregated = {}
+    for k in keys:
+        valid_vals = [item[k] for item in telemetry_minute_buffer if item.get(k) is not None]
+        if valid_vals:
+            if k in ["lux", "m1_ec", "m2_ec", "m3_ec", "tds"]:
+                aggregated[k] = round(sum(valid_vals) / len(valid_vals), 0)
+            else:
+                aggregated[k] = round(sum(valid_vals) / len(valid_vals), 1)
+        else:
+            aggregated[k] = None
+            
+    telemetry_minute_buffer.clear()
+    return aggregated
+
+def process_minute_actuators():
+    global actuator_recap_minute
+    recap = {
+        "exhaust_fan": 1 if (actuator_recap_minute.get("exhaust_fan", 0) == 1 or latest_actuators.get("exhaust_fan", 0) == 1) else 0,
+        "penyiraman_air": 1 if (actuator_recap_minute.get("penyiraman_air", 0) == 1 or latest_actuators.get("penyiraman_air", 0) == 1) else 0,
+        "penyiraman_pupuk": 1 if (actuator_recap_minute.get("penyiraman_pupuk", 0) == 1 or latest_actuators.get("penyiraman_pupuk", 0) == 1) else 0,
+        "mist_ruangan": 1 if (actuator_recap_minute.get("mist_ruangan", 0) == 1 or latest_actuators.get("mist_ruangan", 0) == 1) else 0,
+        "mode": "manual" if (actuator_recap_minute.get("manual_triggered") or latest_actuators.get("mode") == "manual") else "auto"
+    }
+    # Reset recap status ke status terkini untuk menit berikutnya
+    actuator_recap_minute = {
+        "exhaust_fan": latest_actuators.get("exhaust_fan", 0),
+        "penyiraman_air": latest_actuators.get("penyiraman_air", 0),
+        "penyiraman_pupuk": latest_actuators.get("penyiraman_pupuk", 0),
+        "mist_ruangan": latest_actuators.get("mist_ruangan", 0),
+        "manual_triggered": False
+    }
+    return recap
+
 
 def on_mqtt_connect(client, userdata, flags, reason_code, properties=None):
     if reason_code == 0:
@@ -175,16 +272,20 @@ def on_mqtt_message(client, userdata, msg):
             elif "solar" in payload: latest_telemetry["lux"] = float(payload["solar"])
             if "tds" in payload: latest_telemetry["tds"] = round(float(payload["tds"]) / 10.0, 1)
             if "rssi" in payload: latest_telemetry["rssi"] = int(payload["rssi"])
+            record_telemetry_snapshot()
             
         elif topic == TOPIC_TDS:
             if "TDS" in payload: latest_telemetry["tds"] = round(float(payload["TDS"]) / 10.0, 1)
+            record_telemetry_snapshot()
             
         elif topic == TOPIC_PYRA:
             if "Pyrano" in payload: latest_telemetry["lux"] = float(payload["Pyrano"])
+            record_telemetry_snapshot()
             
         elif topic == TOPIC_THPR:
             if "thp_suhu" in payload: latest_telemetry["air_temperature"] = round(float(payload["thp_suhu"]) / 10.0, 1)
             if "thp_hum" in payload: latest_telemetry["air_humidity"] = round(float(payload["thp_hum"]) / 10.0, 1)
+            record_telemetry_snapshot()
             
         elif topic == TOPIC_SOIL:
             # Parsing Data Meja 1
@@ -204,6 +305,7 @@ def on_mqtt_message(client, userdata, msg):
             if "m3_Moist" in payload: latest_telemetry["meja3"]["kelembapan"] = round(float(payload["m3_Moist"]) / 10.0, 1)
             if "m3_EC" in payload: latest_telemetry["meja3"]["ec"] = round(float(payload["m3_EC"]) * 5, 0)
             if "m3_pH" in payload: latest_telemetry["meja3"]["ph"] = round(float(payload["m3_pH"]) / 10.0, 1)
+            record_telemetry_snapshot()
             
         elif topic in [TOPIC_SP_SENSOR_PUB, TOPIC_SP_SENSOR_REC]:
             latest_setpoints["sensor"] = payload
@@ -214,20 +316,35 @@ def on_mqtt_message(client, userdata, msg):
         elif topic in [TOPIC_SP_DURASI_PUB, TOPIC_SP_DURASI_REC]:
             latest_setpoints["durasi"] = payload
             
-        elif topic == TOPIC_STATUS_MODE:
-            latest_actuators["mode"] = "auto" if payload.get("Mode", False) else "manual"
+        elif topic in [TOPIC_STATUS_MODE, TOPIC_RECEIPT_MODE]:
+            mode_val = "auto" if payload.get("Mode", False) else "manual"
+            latest_actuators["mode"] = mode_val
+            if mode_val == "manual":
+                actuator_recap_minute["manual_triggered"] = True
             
-        elif topic == TOPIC_STATUS_SPRAY:
-            latest_actuators["mist_ruangan"] = 1 if payload.get("Spray", False) else 0
+        elif topic in [TOPIC_STATUS_SPRAY, TOPIC_RECEIPT_SPRAY]:
+            val = 1 if payload.get("Spray", False) else 0
+            latest_actuators["mist_ruangan"] = val
+            if val == 1:
+                actuator_recap_minute["mist_ruangan"] = 1
             
-        elif topic == TOPIC_STATUS_MURNI:
-            latest_actuators["penyiraman_air"] = 1 if payload.get("Murni", False) else 0
+        elif topic in [TOPIC_STATUS_MURNI, TOPIC_RECEIPT_MURNI]:
+            val = 1 if payload.get("Murni", False) else 0
+            latest_actuators["penyiraman_air"] = val
+            if val == 1:
+                actuator_recap_minute["penyiraman_air"] = 1
             
-        elif topic == TOPIC_STATUS_NUTRISI:
-            latest_actuators["penyiraman_pupuk"] = 1 if payload.get("Nutrisi", False) else 0
+        elif topic in [TOPIC_STATUS_NUTRISI, TOPIC_RECEIPT_NUTRISI]:
+            val = 1 if payload.get("Nutrisi", False) else 0
+            latest_actuators["penyiraman_pupuk"] = val
+            if val == 1:
+                actuator_recap_minute["penyiraman_pupuk"] = 1
             
-        elif topic == TOPIC_STATUS_EXHAUST:
-            latest_actuators["exhaust_fan"] = 1 if payload.get("Fan", False) else 0
+        elif topic in [TOPIC_STATUS_EXHAUST, TOPIC_RECEIPT_EXHAUST]:
+            val = 1 if payload.get("Fan", False) else 0
+            latest_actuators["exhaust_fan"] = val
+            if val == 1:
+                actuator_recap_minute["exhaust_fan"] = 1
             
     except Exception as e:
         print(f"Error parsing MQTT message: {e}")
@@ -267,51 +384,65 @@ def start_mqtt_client():
         print(f"Error connecting to MQTT: {e}")
 
 async def log_telemetry_to_supabase():
-    last_logged_time = 0
+    last_logged_minute = ""
     while True:
-        await asyncio.sleep(LOGGING_INTERVAL_SECONDS)
-        if supabase:
-            try:
-                current_update = latest_telemetry.get("last_update", 0)
-                # Hanya simpan jika ada data MQTT baru sejak log terakhir
-                if current_update > last_logged_time:
-                    data = {
-                        "air_temperature": latest_telemetry.get("air_temperature"),
-                        "air_humidity": latest_telemetry.get("air_humidity"),
-                        "lux": latest_telemetry.get("lux"),
-                        "tds": latest_telemetry.get("tds"),
-                        "m1_suhu": latest_telemetry.get("meja1", {}).get("suhu"),
-                        "m1_humid": latest_telemetry.get("meja1", {}).get("kelembapan"),
-                        "m1_ec": latest_telemetry.get("meja1", {}).get("ec"),
-                        "m1_ph": latest_telemetry.get("meja1", {}).get("ph"),
-                        "m2_suhu": latest_telemetry.get("meja2", {}).get("suhu"),
-                        "m2_humid": latest_telemetry.get("meja2", {}).get("kelembapan"),
-                        "m2_ec": latest_telemetry.get("meja2", {}).get("ec"),
-                        "m2_ph": latest_telemetry.get("meja2", {}).get("ph"),
-                        "m3_suhu": latest_telemetry.get("meja3", {}).get("suhu"),
-                        "m3_humid": latest_telemetry.get("meja3", {}).get("kelembapan"),
-                        "m3_ec": latest_telemetry.get("meja3", {}).get("ec"),
-                        "m3_ph": latest_telemetry.get("meja3", {}).get("ph")
-                    }
-                    supabase.table("sensor_logs").insert(data).execute()
-                    
-                    # Log aktuator ke tabel terpisah
-                    actuator_data = {
-                        "exhaust_fan": latest_actuators.get("exhaust_fan", 0),
-                        "penyiraman_air": latest_actuators.get("penyiraman_air", 0),
-                        "penyiraman_pupuk": latest_actuators.get("penyiraman_pupuk", 0),
-                        "mist_ruangan": latest_actuators.get("mist_ruangan", 0),
-                        "mode": latest_actuators.get("mode", "auto")
-                    }
-                    supabase.table("actuator_logs").insert(actuator_data).execute()
-                    
-                    # Perbarui last_logged_time
-                    last_logged_time = current_update
+        try:
+            # Sinkronisasi sleep tepat ke batas awal menit berikutnya (:00.00 detik)
+            now = datetime.datetime.now()
+            sleep_duration = 60.0 - now.second - (now.microsecond / 1_000_000.0)
+            if sleep_duration <= 0.05:
+                sleep_duration += 60.0
+            await asyncio.sleep(sleep_duration)
+            
+            # Eksekusi tepat di detik :00
+            now_utc = datetime.datetime.now(datetime.timezone.utc)
+            aligned_utc = now_utc.replace(second=0, microsecond=0)
+            minute_key = aligned_utc.strftime("%Y-%m-%d %H:%M")
+            
+            # Cegah duplikasi penulisan pada menit yang sama
+            if minute_key == last_logged_minute:
+                continue
+            last_logged_minute = minute_key
+            
+            target_iso = aligned_utc.strftime("%Y-%m-%dT%H:%M:00Z")
+            
+            # Log jika data MQTT aktif (terakhir diterima dalam 5 menit terakhir)
+            last_upd = latest_telemetry.get("last_update", 0)
+            has_active_stream = (time.time() - last_upd) < 300 or len(telemetry_minute_buffer) > 0
+            
+            if supabase and has_active_stream:
+                telemetry_data = process_minute_telemetry()
+                actuator_data = process_minute_actuators()
                 
-            except Exception as e:
-                print(f"Error logging telemetry to Supabase: {e}")
+                # Samakan waktu secara presisi di 00 detik
+                telemetry_data["created_at"] = target_iso
+                actuator_data["created_at"] = target_iso
+                
+                supabase.table("sensor_logs").insert(telemetry_data).execute()
+                supabase.table("actuator_logs").insert(actuator_data).execute()
+                print(f"[LOG SYNC 00] 1-Min Data recorded to Supabase at {target_iso}")
+                
+        except Exception as e:
+            print(f"Error in 1-min Supabase logger: {e}")
+            await asyncio.sleep(1)
 
 background_tasks_set = set()
+
+async def render_keep_alive():
+    url = os.getenv("RENDER_EXTERNAL_URL")
+    if not url:
+        return
+    ping_url = f"{url.rstrip('/')}/health"
+    import urllib.request
+    while True:
+        await asyncio.sleep(600)  # Ping tiap 10 menit
+        try:
+            req = urllib.request.Request(ping_url, headers={"User-Agent": "RenderKeepAlive/1.0"})
+            with urllib.request.urlopen(req, timeout=15) as response:
+                pass
+            print(f"[KEEP-ALIVE] Ping sent to {ping_url}")
+        except Exception as e:
+            print(f"[KEEP-ALIVE] Ping error: {e}")
 
 @app.on_event("startup")
 async def startup_event():
@@ -319,6 +450,10 @@ async def startup_event():
     task = asyncio.create_task(log_telemetry_to_supabase())
     background_tasks_set.add(task)
     task.add_done_callback(background_tasks_set.discard)
+    
+    keepalive_task = asyncio.create_task(render_keep_alive())
+    background_tasks_set.add(keepalive_task)
+    keepalive_task.add_done_callback(background_tasks_set.discard)
 
 async def auto_off_actuator(payload_data: dict, device: str, delay: int = 3):
     await asyncio.sleep(delay)
@@ -327,12 +462,15 @@ async def auto_off_actuator(payload_data: dict, device: str, delay: int = 3):
             if device == "mist_ruangan":
                 topic = TOPIC_CONTROL_SPRAY
                 payload = {"Spray": False}
+                latest_actuators["mist_ruangan"] = 0
             elif device == "penyiraman_air":
                 topic = TOPIC_CONTROL_MURNI
                 payload = {"Murni": False}
+                latest_actuators["penyiraman_air"] = 0
             elif device == "penyiraman_pupuk":
                 topic = TOPIC_CONTROL_NUTRISI
                 payload = {"Nutrisi": False}
+                latest_actuators["penyiraman_pupuk"] = 0
             else:
                 return
                 
@@ -603,6 +741,11 @@ async def analyze_greenhouse_metrics(metrics: GreenhouseMetrics):
         global latest_actuators
         latest_actuators.update(final_actions)
         latest_actuators["mode"] = metrics.mode
+        for dev, st in final_actions.items():
+            if st == 1:
+                actuator_recap_minute[dev] = 1
+        if metrics.mode == "manual":
+            actuator_recap_minute["manual_triggered"] = True
 
         # Update latest telemetry global state agar data dashboard sinkron dengan custom dummy
         latest_telemetry["air_temperature"] = metrics.air_temperature
@@ -641,8 +784,8 @@ async def analyze_greenhouse_metrics(metrics: GreenhouseMetrics):
         if len(sensor_logs) > 100:
             sensor_logs.pop(0)
             
-        # Cek apakah PLC offline (tidak ada data lebih dari 60 detik)
-        plc_offline = (time.time() - latest_telemetry.get("last_update", 0)) > 60
+        # Cek apakah PLC offline (tidak ada data MQTT lebih dari 5 menit / 300 detik)
+        plc_offline = (time.time() - latest_telemetry.get("last_update", 0)) > 300
 
         # Jika mode auto dan PLC aktif, kirim command MQTT secara otomatis ke aktuator
         if metrics.mode == "auto" and mqtt_client_instance and not plc_offline:
@@ -1045,26 +1188,45 @@ async def control_actuator(req: ControlRequest, background_tasks: BackgroundTask
     if not mqtt_client_instance:
         raise HTTPException(status_code=500, detail="MQTT Client not connected")
     
-    # Cek apakah PLC offline
-    if (time.time() - latest_telemetry.get("last_update", 0)) > 60:
+    # Cek apakah PLC offline (tidak ada data MQTT lebih dari 5 menit / 300 detik)
+    if (time.time() - latest_telemetry.get("last_update", 0)) > 300:
         raise HTTPException(status_code=503, detail="PLC Offline, command not sent.")
     
     try:
         if req.device == "mode_switch":
             topic = TOPIC_CONTROL_MODE
             payload = json.dumps({"Mode": bool(req.state)})
+            latest_actuators["mode"] = "auto" if req.state == 1 else "manual"
+            if req.state == 0:
+                actuator_recap_minute["manual_triggered"] = True
         elif req.device == "mist_ruangan":
             topic = TOPIC_CONTROL_SPRAY
-            payload = json.dumps({"Spray": bool(req.payload_data.get("Spray", False))})
+            st = bool(req.payload_data.get("Spray", False))
+            payload = json.dumps({"Spray": st})
+            latest_actuators["mist_ruangan"] = 1 if st else 0
+            if st:
+                actuator_recap_minute["mist_ruangan"] = 1
         elif req.device == "penyiraman_air":
             topic = TOPIC_CONTROL_MURNI
-            payload = json.dumps({"Murni": bool(req.payload_data.get("Murni", False))})
+            st = bool(req.payload_data.get("Murni", False))
+            payload = json.dumps({"Murni": st})
+            latest_actuators["penyiraman_air"] = 1 if st else 0
+            if st:
+                actuator_recap_minute["penyiraman_air"] = 1
         elif req.device == "penyiraman_pupuk":
             topic = TOPIC_CONTROL_NUTRISI
-            payload = json.dumps({"Nutrisi": bool(req.payload_data.get("Nutrisi", False))})
+            st = bool(req.payload_data.get("Nutrisi", False))
+            payload = json.dumps({"Nutrisi": st})
+            latest_actuators["penyiraman_pupuk"] = 1 if st else 0
+            if st:
+                actuator_recap_minute["penyiraman_pupuk"] = 1
         elif req.device == "exhaust_fan":
             topic = TOPIC_CONTROL_EXHAUST
-            payload = json.dumps({"Fan": bool(req.payload_data.get("Fan", False))})
+            st = bool(req.payload_data.get("Fan", False))
+            payload = json.dumps({"Fan": st})
+            latest_actuators["exhaust_fan"] = 1 if st else 0
+            if st:
+                actuator_recap_minute["exhaust_fan"] = 1
         else:
             topic = f"inianggrek/control/{req.device}"
             payload = json.dumps({"status": req.state})
@@ -1080,6 +1242,9 @@ async def control_actuator(req: ControlRequest, background_tasks: BackgroundTask
 async def get_latest_telemetry():
     response = latest_telemetry.copy()
     response["actuators"] = latest_actuators
+    now = time.time()
+    last_upd = latest_telemetry.get("last_update", 0)
+    response["plc_online"] = (last_upd > 0) and ((now - last_upd) < 300)
     return response
 
 @app.post("/publish-thresholds")
