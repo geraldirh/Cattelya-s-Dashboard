@@ -418,6 +418,12 @@ async def log_telemetry_to_supabase():
                 telemetry_data["created_at"] = target_iso
                 actuator_data["created_at"] = target_iso
                 
+                # Cek apakah stempel waktu ini sudah dicatat oleh server lain (misal: Render vs Localhost)
+                check_exist = supabase.table("sensor_logs").select("id").eq("created_at", target_iso).limit(1).execute()
+                if check_exist.data:
+                    print(f"[LOG SYNC 00] Skip: Data for {target_iso} already inserted by another instance.")
+                    continue
+
                 supabase.table("sensor_logs").insert(telemetry_data).execute()
                 supabase.table("actuator_logs").insert(actuator_data).execute()
                 print(f"[LOG SYNC 00] 1-Min Data recorded to Supabase at {target_iso}")
@@ -859,6 +865,7 @@ async def get_logs(period: str = "1h"):
             
             # Format output agar sesuai dengan bentuk "sensor_logs" yang diharapkan frontend
             formatted_logs = []
+            seen_timestamps = set()
             import datetime
             for row in reversed(raw_data): 
                 # Waktu di Supabase adalah format ISO 8601 UTC (2026-08-25T15:23:45+00:00).
@@ -884,6 +891,11 @@ async def get_logs(period: str = "1h"):
                         ts = local_dt.strftime("%d-%m-%Y %H:%M:%S")
                     except Exception:
                         ts = ts_str
+                
+                # Hindari baris duplikat di menit yang sama
+                if ts in seen_timestamps:
+                    continue
+                seen_timestamps.add(ts)
                         
                 formatted_logs.append({
                     "timestamp": ts,

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 
 <head>
@@ -56,7 +56,8 @@
     <div class="main-wrapper">
 
         <!-- TOMBOL HAMBURGER MOBILE -->
-        <button class="mobile-nav-toggle" id="mobileNavToggle" onclick="toggleMobileMenu()" style="display: none !important;">
+        <button class="mobile-nav-toggle" id="mobileNavToggle" onclick="toggleMobileMenu()"
+            style="display: none !important;">
             <span id="mobileNavTitle"><i data-lucide="thermometer"></i> Monitoring</span>
             <div class="mobile-burger-icon">
                 <span></span>
@@ -112,7 +113,11 @@
                             <button class="chat-sidebar-toggle" onclick="toggleChatSidebar()"
                                 style="display:none; background:transparent; border:none; color:var(--text-dark); cursor:pointer;"><i
                                     data-lucide="menu"></i></button>
-                            <div class="chat-header-title"><lottie-player src="https://assets2.lottiefiles.com/packages/lf20_dhcs95q8.json" background="transparent" speed="1" style="width: 28px; height: 28px; display:inline-block; margin-right:4px;" loop autoplay></lottie-player> Dokter Anggrek Chat AI
+                            <div class="chat-header-title"><lottie-player
+                                    src="https://assets2.lottiefiles.com/packages/lf20_dhcs95q8.json"
+                                    background="transparent" speed="1"
+                                    style="width: 28px; height: 28px; display:inline-block; margin-right:4px;" loop
+                                    autoplay></lottie-player> Dokter Anggrek Chat AI
                             </div>
                         </div>
                         <button class="chat-reset-btn" onclick="resetChat()"><i data-lucide="trash-2"></i>
@@ -516,9 +521,13 @@
                     <div class="actuators-grid locked" id="actuatorsGridContainer">
                         <!-- Lock Overlay -->
                         <div class="actuator-lock-overlay">
-                            <i data-lucide="lock" style="width: 48px; height: 48px; color: #475569; margin-bottom: 12px;"></i>
-                            <span style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.2rem; color: #334155;">Mode Otomatis Aktif</span>
-                            <span style="font-size: 0.9rem; color: #64748b; margin-top: 4px;">Ubah ke mode manual untuk mengontrol aktuator.</span>
+                            <i data-lucide="lock"
+                                style="width: 48px; height: 48px; color: #475569; margin-bottom: 12px;"></i>
+                            <span
+                                style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.2rem; color: #334155;">Mode
+                                Otomatis Aktif</span>
+                            <span style="font-size: 0.9rem; color: #64748b; margin-top: 4px;">Ubah ke mode manual untuk
+                                mengontrol aktuator.</span>
                         </div>
                         <!-- Exhaust Fan -->
                         <div class="actuator-card" id="fanBox">
@@ -886,35 +895,40 @@
             <div class="logger-layout">
                 <div class="chart-wrap">
                     <div class="charts-master-container">
-                    <div class="section-title" style="margin-bottom:15px; margin-top: 10px; display:flex; justify-content:space-between; align-items:center;">
-                        <div><i data-lucide="bar-chart-2"></i> Grafik Analisis Sentral</div>
-                        <div style="display:flex; gap: 10px;">
-                            <select id="timeRangeSelector" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; font-size: 13px; font-family: 'Inter', sans-serif; cursor: pointer; color: #1e293b; outline: none; font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" onchange="fetchAndPopulateLogs()">
-                                <option value="1h">1 Jam Terakhir</option>
-                                <option value="3h">3 Jam Terakhir</option>
-                                <option value="6h">6 Jam Terakhir</option>
-                                <option value="1d">1 Hari Terakhir</option>
-                                <option value="1w">1 Minggu Terakhir</option>
-                                <option value="1m">1 Bulan Terakhir</option>
-                            </select>
-                            <select id="mainChartSelector" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; font-size: 13px; font-family: 'Inter', sans-serif; cursor: pointer; color: #1e293b; outline: none; font-weight: 500; min-width: 200px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                                <option value="envSuhu">Suhu Lingkungan (°C)</option>
-                                <option value="envHumid">Kelembapan Lingkungan (%)</option>
-                                <option value="envLux">Cahaya (Lux)</option>
-                                <option value="soilSuhu">Suhu Tanah (°C)</option>
-                                <option value="soilHumid">Kelembapan Tanah (%)</option>
-                                <option value="soilPh">pH Tanah</option>
-                                <option value="soilEc">Conductivity (EC) (PPM)</option>
-                                <option value="compEnv">Perbandingan Suhu & Kelembapan Lingkungan</option>
-                                <option value="compSoil">Perbandingan Suhu & Kelembapan Tanah</option>
-                                <option value="compPhEc">Perbandingan pH & Conductivity</option>
-                            </select>
+                        <div class="section-title"
+                            style="margin-bottom:15px; margin-top: 10px; display:flex; justify-content:space-between; align-items:center;">
+                            <div><i data-lucide="bar-chart-2"></i> Grafik Analisis Sentral</div>
+                            <div style="display:flex; gap: 10px;">
+                                <select id="timeRangeSelector"
+                                    style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; font-size: 13px; font-family: 'Inter', sans-serif; cursor: pointer; color: #1e293b; outline: none; font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,0.05);"
+                                    onchange="fetchAndPopulateLogs()">
+                                    <option value="1h">1 Jam Terakhir</option>
+                                    <option value="3h">3 Jam Terakhir</option>
+                                    <option value="6h">6 Jam Terakhir</option>
+                                    <option value="1d">1 Hari Terakhir</option>
+                                    <option value="1w">1 Minggu Terakhir</option>
+                                    <option value="1m">1 Bulan Terakhir</option>
+                                </select>
+                                <select id="mainChartSelector"
+                                    style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; font-size: 13px; font-family: 'Inter', sans-serif; cursor: pointer; color: #1e293b; outline: none; font-weight: 500; min-width: 200px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                    <option value="envSuhu">Suhu Lingkungan (°C)</option>
+                                    <option value="envHumid">Kelembapan Lingkungan (%)</option>
+                                    <option value="envLux">Cahaya (Lux)</option>
+                                    <option value="soilSuhu">Suhu Tanah (°C)</option>
+                                    <option value="soilHumid">Kelembapan Tanah (%)</option>
+                                    <option value="soilPh">pH Tanah</option>
+                                    <option value="soilEc">Conductivity (EC) (PPM)</option>
+                                    <option value="compEnv">Perbandingan Suhu & Kelembapan Lingkungan</option>
+                                    <option value="compSoil">Perbandingan Suhu & Kelembapan Tanah</option>
+                                    <option value="compPhEc">Perbandingan pH & Conductivity</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="chart-card-solid" style="padding: 20px; min-height: 400px; background: #ffffff; border-radius: 12px; border: 1px solid rgba(255,255,255,0.4); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);">
-                        <div id="chart-main" style="width: 100%;"></div>
-                    </div>
+
+                        <div class="chart-card-solid"
+                            style="padding: 20px; min-height: 400px; background: #ffffff; border-radius: 12px; border: 1px solid rgba(255,255,255,0.4); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);">
+                            <div id="chart-main" style="width: 100%;"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="table-wrap">
@@ -971,7 +985,8 @@
                 <i data-lucide="bar-chart-2"></i>
                 <span class="dock-tooltip">Data Logger</span>
             </div>
-            <div style="width: 1px; height: 30px; background: rgba(0,0,0,0.1); margin: 0 4px; align-self: center;"></div>
+            <div style="width: 1px; height: 30px; background: rgba(0,0,0,0.1); margin: 0 4px; align-self: center;">
+            </div>
             <div class="dock-item" onclick="toggleDarkMode()">
                 <i data-lucide="moon" id="darkModeIcon"></i>
                 <span class="dock-tooltip">Dark Mode</span>
@@ -980,7 +995,7 @@
 
     </div><!-- .main-wrapper -->
 
-    <div class="footer">Â©2026 OrchiCare AI Â· Smart Greenhouse Monitoring System Â· Powered GRY x SYW ~ Molket University
+    <div class="footer">©2026 OrchiCare AI · Smart Greenhouse Monitoring System
     </div>
 
     <!-- â•â•â•â•â•â•â•â•â•â•â• JAVASCRIPT â•â•â•â•â•â•â•â•â•â•â• -->
