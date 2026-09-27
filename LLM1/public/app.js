@@ -602,8 +602,9 @@
                 const data = await res.json();
                 if (!res.ok) throw new Error();
                 const logs = data.logs;
+                const tableData = data.table_logs || [...logs].reverse();
                 tbody.innerHTML = '';
-                [...logs].reverse().forEach((log, idx) => {
+                tableData.forEach((log, idx) => {
                     const tr = document.createElement('tr');
                     tr.style.opacity = 0;
                     tr.style.transform = 'translateY(10px)';

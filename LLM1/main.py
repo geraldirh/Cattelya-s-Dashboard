@@ -858,21 +858,9 @@ async def get_logs(period: str = "1h"):
                 if len(resp.data) < chunk_limit:
                     break
             
-            # Downsampling jika data terlalu besar (maksimal ~150 titik untuk grafik)
-            if len(raw_data) > 150:
-                step_val = len(raw_data) // 150
-                raw_data = raw_data[::step_val]
-            
-            # Format output agar sesuai dengan bentuk "sensor_logs" yang diharapkan frontend
-            formatted_logs = []
-            seen_timestamps = set()
             import datetime
-            for row in reversed(raw_data): 
-                # Waktu di Supabase adalah format ISO 8601 UTC (2026-08-25T15:23:45+00:00).
-                # Kita ubah ke zona waktu lokal (WIB = UTC+7) dan ambil jam:menit:detik
+            def format_row(row):
                 ts_str = row.get("created_at", "")
-                
-                # Cari act_row yang waktunya cocok (di menit yang sama)
                 prefix = ts_str[:16] if ts_str else ""
                 act_row = {}
                 for a in act_list:
@@ -883,21 +871,12 @@ async def get_logs(period: str = "1h"):
                 ts = ts_str
                 if "T" in ts:
                     try:
-                        # Parse UTC string ke datetime object
                         utc_dt = datetime.datetime.strptime(ts[:19], "%Y-%m-%dT%H:%M:%S")
-                        # Tambah 7 jam untuk WIB
                         local_dt = utc_dt + datetime.timedelta(hours=7)
-                        # Format ke string hari-bulan-tahun jam:menit:detik
                         ts = local_dt.strftime("%d-%m-%Y %H:%M:%S")
                     except Exception:
                         ts = ts_str
-                
-                # Hindari baris duplikat di menit yang sama
-                if ts in seen_timestamps:
-                    continue
-                seen_timestamps.add(ts)
-                        
-                formatted_logs.append({
+                return ts, {
                     "timestamp": ts,
                     "air_temperature": row.get("air_temperature"),
                     "air_humidity": row.get("air_humidity"),
@@ -912,12 +891,42 @@ async def get_logs(period: str = "1h"):
                         "penyiraman_pupuk": act_row.get("penyiraman_pupuk", 0),
                         "mist_ruangan": act_row.get("mist_ruangan", 0)
                     }
-                })
-            return {"status": "success", "logs": formatted_logs}
+                }
+
+            # 1. Data khusus Tabel: Ambil 60 entri data terbaru per menit tanpa downsampling
+            formatted_table_logs = []
+            seen_table_ts = set()
+            for row in raw_data:
+                ts, item = format_row(row)
+                if ts not in seen_table_ts:
+                    seen_table_ts.add(ts)
+                    formatted_table_logs.append(item)
+                if len(formatted_table_logs) >= 60:
+                    break
+
+            # 2. Data khusus Grafik: Downsampling jika rentang waktu panjang (>150 titik) agar performa browser optimal
+            chart_raw = raw_data
+            if len(chart_raw) > 150:
+                step_val = len(chart_raw) // 150
+                chart_raw = chart_raw[::step_val]
+
+            formatted_chart_logs = []
+            seen_chart_ts = set()
+            for row in reversed(chart_raw):
+                ts, item = format_row(row)
+                if ts not in seen_chart_ts:
+                    seen_chart_ts.add(ts)
+                    formatted_chart_logs.append(item)
+
+            return {
+                "status": "success", 
+                "logs": formatted_chart_logs,
+                "table_logs": formatted_table_logs
+            }
         except Exception as e:
             print(f"Error fetching logs from Supabase: {e}")
             
-    return {"status": "success", "logs": sensor_logs}
+    return {"status": "success", "logs": sensor_logs, "table_logs": sensor_logs}
 
 # Endpoint untuk obrolan interaktif konsultasi anggrek (chatbot terbatas konteks anggrek)
 
