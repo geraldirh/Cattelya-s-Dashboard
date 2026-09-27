@@ -173,11 +173,11 @@ def on_mqtt_message(client, userdata, msg):
             if "kelembapan" in payload: latest_telemetry["air_humidity"] = float(payload["kelembapan"])
             if "lux" in payload: latest_telemetry["lux"] = float(payload["lux"])
             elif "solar" in payload: latest_telemetry["lux"] = float(payload["solar"])
-            if "tds" in payload: latest_telemetry["tds"] = float(payload["tds"])
+            if "tds" in payload: latest_telemetry["tds"] = round(float(payload["tds"]) / 10.0, 1)
             if "rssi" in payload: latest_telemetry["rssi"] = int(payload["rssi"])
             
         elif topic == TOPIC_TDS:
-            if "TDS" in payload: latest_telemetry["tds"] = float(payload["TDS"])
+            if "TDS" in payload: latest_telemetry["tds"] = round(float(payload["TDS"]) / 10.0, 1)
             
         elif topic == TOPIC_PYRA:
             if "Pyrano" in payload: latest_telemetry["lux"] = float(payload["Pyrano"])
@@ -190,19 +190,19 @@ def on_mqtt_message(client, userdata, msg):
             # Parsing Data Meja 1
             if "m1_suhu" in payload: latest_telemetry["meja1"]["suhu"] = round(float(payload["m1_suhu"]) / 10.0, 1)
             if "m1_kelembapan" in payload: latest_telemetry["meja1"]["kelembapan"] = round(float(payload["m1_kelembapan"]) / 10.0, 1)
-            if "m1_EC" in payload: latest_telemetry["meja1"]["ec"] = round(float(payload["m1_EC"]), 1)
+            if "m1_EC" in payload: latest_telemetry["meja1"]["ec"] = round(float(payload["m1_EC"]) * 500, 1)
             if "m1_pH" in payload: latest_telemetry["meja1"]["ph"] = round(float(payload["m1_pH"]) / 10.0, 1)
             
             # Parsing Data Meja 2
             if "m2_Suhu" in payload: latest_telemetry["meja2"]["suhu"] = round(float(payload["m2_Suhu"]) / 10.0, 1)
             if "m2_Moist" in payload: latest_telemetry["meja2"]["kelembapan"] = round(float(payload["m2_Moist"]) / 10.0, 1)
-            if "m2_EC" in payload: latest_telemetry["meja2"]["ec"] = round(float(payload["m2_EC"]), 1)
+            if "m2_EC" in payload: latest_telemetry["meja2"]["ec"] = round(float(payload["m2_EC"]) * 500, 1)
             if "m2_pH" in payload: latest_telemetry["meja2"]["ph"] = round(float(payload["m2_pH"]) / 10.0, 1)
             
             # Parsing Data Meja 3
             if "m3_Suhu" in payload: latest_telemetry["meja3"]["suhu"] = round(float(payload["m3_Suhu"]) / 10.0, 1)
             if "m3_Moist" in payload: latest_telemetry["meja3"]["kelembapan"] = round(float(payload["m3_Moist"]) / 10.0, 1)
-            if "m3_EC" in payload: latest_telemetry["meja3"]["ec"] = round(float(payload["m3_EC"]), 1)
+            if "m3_EC" in payload: latest_telemetry["meja3"]["ec"] = round(float(payload["m3_EC"]) * 500, 1)
             if "m3_pH" in payload: latest_telemetry["meja3"]["ph"] = round(float(payload["m3_pH"]) / 10.0, 1)
             
         elif topic in [TOPIC_SP_SENSOR_PUB, TOPIC_SP_SENSOR_REC]:
@@ -671,18 +671,53 @@ async def analyze_greenhouse_metrics(metrics: GreenhouseMetrics):
 
 # Endpoint untuk mengambil data log riwayat parameter greenhouse
 @app.get("/get-logs")
-async def get_logs():
+async def get_logs(period: str = "1h"):
     if supabase:
         try:
-            # Mengambil 50 data terbaru dari supabase
-            response = supabase.table("sensor_logs").select("*").order("created_at", desc=True).limit(50).execute()
-            act_response = supabase.table("actuator_logs").select("*").order("created_at", desc=True).limit(50).execute()
-            act_list = act_response.data
+            # Setel limit berdasarkan periode
+            if period == "1h":
+                limit_val = 60
+            elif period == "3h":
+                limit_val = 180
+            elif period == "6h":
+                limit_val = 360
+            elif period == "1d":
+                limit_val = 1440
+            elif period == "1w":
+                limit_val = 10080
+            elif period == "1m":
+                limit_val = 43200
+            else:
+                limit_val = 60
+                
+            # Mengambil data terbaru dari supabase (dengan pagination karena limit Supabase 1000 per request)
+            raw_data = []
+            act_list = []
+            page_size = 1000
+            
+            for offset in range(0, limit_val, page_size):
+                chunk_limit = min(page_size, limit_val - offset)
+                resp = supabase.table("sensor_logs").select("*").order("created_at", desc=True).range(offset, offset + chunk_limit - 1).execute()
+                act_resp = supabase.table("actuator_logs").select("*").order("created_at", desc=True).range(offset, offset + chunk_limit - 1).execute()
+                
+                if not resp.data:
+                    break
+                    
+                raw_data.extend(resp.data)
+                act_list.extend(act_resp.data)
+                
+                if len(resp.data) < chunk_limit:
+                    break
+            
+            # Downsampling jika data terlalu besar (maksimal ~150 titik untuk grafik)
+            if len(raw_data) > 150:
+                step_val = len(raw_data) // 150
+                raw_data = raw_data[::step_val]
             
             # Format output agar sesuai dengan bentuk "sensor_logs" yang diharapkan frontend
             formatted_logs = []
             import datetime
-            for row in reversed(response.data): 
+            for row in reversed(raw_data): 
                 # Waktu di Supabase adalah format ISO 8601 UTC (2026-08-25T15:23:45+00:00).
                 # Kita ubah ke zona waktu lokal (WIB = UTC+7) dan ambil jam:menit:detik
                 ts_str = row.get("created_at", "")
@@ -1043,7 +1078,9 @@ async def control_actuator(req: ControlRequest, background_tasks: BackgroundTask
 # Endpoint untuk mengambil data sensor terbaru dari MQTT
 @app.get("/latest-telemetry")
 async def get_latest_telemetry():
-    return latest_telemetry
+    response = latest_telemetry.copy()
+    response["actuators"] = latest_actuators
+    return response
 
 @app.post("/publish-thresholds")
 async def publish_thresholds(req: dict):

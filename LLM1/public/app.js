@@ -1,4 +1,4 @@
-/* ── State ──────────────────────────────────── */
+/* â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
         let chatAttachedImageBase64 = null;
         let logsChart = null;
         let actuatorMode = 'auto';
@@ -14,7 +14,7 @@
         let chatHistory = [];
         let currentActuators = { exhaust_fan: 0, penyiraman_air: 0, penyiraman_pupuk: 0, mist_ruangan: 0 };
 
-        /* ── Mobile Hamburger Menu Toggle ───────────── */
+        /* â”€â”€ Mobile Hamburger Menu Toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
         function toggleChatSidebar() {
             const sidebar = document.getElementById('recentSidebar');
@@ -35,7 +35,7 @@
             }
         }
 
-        /* ── Tab Switch ─────────────────────────────── */
+        /* â”€â”€ Tab Switch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
         function switchTab(id) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -64,7 +64,7 @@
         }
 
 
-        /* ── Gauge Renderer ─────────────────────────── */
+        /* â”€â”€ Gauge Renderer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
         function drawGauge(gId, vId, val, min, max, unit) {
             const pct = Math.min(Math.max((val - min) / (max - min), 0), 1);
             const arc = document.getElementById(gId);
@@ -82,11 +82,18 @@
             document.getElementById('dK').innerText = k + ' mg/kg';
         }
 
-        /* ── Actuator Mode ──────────────────────────── */
+        /* â”€â”€ Actuator Mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
         async function setActuatorMode(mode) {
             actuatorMode = mode;
             document.getElementById('btnModeAuto').classList.toggle('active', mode === 'auto');
             document.getElementById('btnModeManual').classList.toggle('active', mode === 'manual');
+            
+            const gridContainer = document.getElementById('actuatorsGridContainer');
+            if (gridContainer) {
+                if (mode === 'auto') gridContainer.classList.add('locked');
+                else gridContainer.classList.remove('locked');
+            }
+
             document.getElementById('modeDesc').innerText = mode === 'auto'
                 ? 'Mode otomatis aktif. Aktuator dikontrol AI berdasarkan data sensor secara real-time.'
                 : 'Mode manual aktif. Anda bebas menyalakan/mematikan aktuator dengan sakelar berikut.';
@@ -174,7 +181,7 @@
             }
         }
 
-        /* ── File Upload / Image Attachment in Chat ── */
+        /* â”€â”€ File Upload / Image Attachment in Chat â”€â”€ */
         function handleChatFileSelect(e) {
             const file = e.target.files && e.target.files[0];
             if (!file) return;
@@ -205,12 +212,12 @@
             if (thumb) thumb.src = '';
         }
 
-        /* ── Markdown converter (simple) ───────────── */
+        /* â”€â”€ Markdown converter (simple) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
         function fmtMD(t) {
             return t.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
         }
 
-        /* ── Chat bubble helper & Typing Indicator ─── */
+        /* â”€â”€ Chat bubble helper & Typing Indicator â”€â”€â”€ */
         function appendBubble(role, html, imageSrc = null) {
             const el = document.createElement('div');
             el.className = 'chat-bubble ' + (role === 'user' ? 'user' : 'ai');
@@ -369,10 +376,10 @@
                 <div class="chat-bubble ai">
                     Halo! Saya <b>Dokter Anggrek AI</b> <i data-lucide="flower"></i><br><br>
                     Saya siap membantu Anda dalam:<br>
-                    • Diagnosis penyakit & hama anggrek via foto<br>
-                    • Perawatan, penyiraman, dan pemupukan<br>
-                    • Tips media tanam & pencegahan hama<br>
-                    • Konsultasi anggrek lainnya<br><br>
+                    â€¢ Diagnosis penyakit & hama anggrek via foto<br>
+                    â€¢ Perawatan, penyiraman, dan pemupukan<br>
+                    â€¢ Tips media tanam & pencegahan hama<br>
+                    â€¢ Konsultasi anggrek lainnya<br><br>
                     Ketik pertanyaan atau klik ikon <b><i data-lucide="paperclip"></i> Foto</b> untuk melampirkan gambar anggrek Anda! <i data-lucide="stethoscope"></i>
                 </div>`;
             clearChatImageAttachment();
@@ -464,7 +471,7 @@
             createNewChat();
         }
 
-        /* ── Metrics to Backend ─────────────────────── */
+        /* â”€â”€ Metrics to Backend â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
         async function sendMetricsToBackend(redirect = true) {
             const vals = {
                 air_temperature: parseFloat(document.getElementById('simAirTemp').value),
@@ -523,24 +530,24 @@
 
                 setMetricText('vM1Suhu', vals.meja1.suhu, '°C');
                 setMetricText('vM1Humid', vals.meja1.kelembapan, '%');
-                updateGauge('cM1EC', 'vM1EC', vals.meja1.ec, 0, 130, '');
+                updateGauge('cM1EC', 'vM1EC', vals.meja1.ec, 0, 2000, '');
                 updateGauge('cM1pH', 'vM1pH', vals.meja1.ph, 0, 14, '');
 
                 setMetricText('vM2Suhu', vals.meja2.suhu, '°C');
                 setMetricText('vM2Humid', vals.meja2.kelembapan, '%');
-                updateGauge('cM2EC', 'vM2EC', vals.meja2.ec, 0, 130, '');
+                updateGauge('cM2EC', 'vM2EC', vals.meja2.ec, 0, 2000, '');
                 updateGauge('cM2pH', 'vM2pH', vals.meja2.ph, 0, 14, '');
 
                 setMetricText('vM3Suhu', vals.meja3.suhu, '°C');
                 setMetricText('vM3Humid', vals.meja3.kelembapan, '%');
-                updateGauge('cM3EC', 'vM3EC', vals.meja3.ec, 0, 130, '');
+                updateGauge('cM3EC', 'vM3EC', vals.meja3.ec, 0, 2000, '');
                 updateGauge('cM3pH', 'vM3pH', vals.meja3.ph, 0, 14, '');
 
                 // AI summary
-                document.getElementById('resAir').innerText = data.status_udara || '—';
-                document.getElementById('resSoil').innerText = data.status_tanah || '—';
-                document.getElementById('resTDS').innerText = data.status_nutrisi || '—';
-                document.getElementById('resSolar').innerText = data.status_cahaya || '—';
+                document.getElementById('resAir').innerText = data.status_udara || 'â€”';
+                document.getElementById('resSoil').innerText = data.status_tanah || 'â€”';
+                document.getElementById('resTDS').innerText = data.status_nutrisi || 'â€”';
+                document.getElementById('resSolar').innerText = data.status_cahaya || 'â€”';
                 document.getElementById('resRec').innerHTML = fmtMD(data.rekomendasi || '');
 
                 // Actuators (auto)
@@ -582,12 +589,16 @@
             }
         }
 
-        /* ── Logger ─────────────────────────────────── */
-        async function fetchAndPopulateLogs() {
+        /* â”€â”€ Logger â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+        async function fetchAndPopulateLogs(silent = false) {
             const tbody = document.getElementById('logsTableBody');
-            tbody.innerHTML = Array(5).fill('<tr>' + Array(12).fill('<td><div class="skeleton" style="height: 20px; width: 100%;"></div></td>').join('') + '</tr>').join('');
+            const timeRangeEl = document.getElementById('timeRangeSelector');
+            const period = timeRangeEl ? timeRangeEl.value : '1h';
+            if (!silent) {
+                tbody.innerHTML = Array(5).fill('<tr>' + Array(12).fill('<td><div class="skeleton" style="height: 20px; width: 100%;"></div></td>').join('') + '</tr>').join('');
+            }
             try {
-                const res = await fetch('/get-logs');
+                const res = await fetch('/get-logs?period=' + period);
                 const data = await res.json();
                 if (!res.ok) throw new Error();
                 const logs = data.logs;
@@ -618,7 +629,7 @@
                 <td><span style="${onColor(actions.mist_ruangan, 'var(--info)')}">${actions.mist_ruangan}</span></td>`;
                     tbody.appendChild(tr);
                     
-                    if (typeof gsap !== 'undefined') {
+                    if (!silent && typeof gsap !== 'undefined') {
                         gsap.to(tr, { opacity: 1, y: 0, duration: 0.3, delay: idx * 0.05, ease: "power2.out" });
                     } else {
                         tr.style.opacity = 1;
@@ -758,7 +769,6 @@
                     const selection = selector ? selector.value : 'envSuhu';
                     const el = document.querySelector('#chart-main');
                     if (!el) return;
-                    if (el._chart) { el._chart.destroy(); }
                     
                     let series = [];
                     let yaxisOptions = [];
@@ -791,8 +801,8 @@
                         yaxisOptions = [{ title: { text: 'pH', style: { color: '#ec4899' } }, labels: { style: { colors: '#ec4899' }, formatter: v => v.toFixed(2) } }];
                         colors = ['#ec4899']; strokeWidth = [2];
                     } else if (selection === 'soilEc') {
-                        series = [{ name: 'Conductivity (mS/cm)', type: 'area', data: soilEc }];
-                        yaxisOptions = [{ title: { text: 'Conductivity (mS/cm)', style: { color: '#14b8a6' } }, labels: { style: { colors: '#14b8a6' }, formatter: v => v.toFixed(2) } }];
+                        series = [{ name: 'Conductivity (PPM)', type: 'area', data: soilEc }];
+                        yaxisOptions = [{ title: { text: 'Conductivity (PPM)', style: { color: '#14b8a6' } }, labels: { style: { colors: '#14b8a6' }, formatter: v => v.toFixed(0) } }];
                         colors = ['#14b8a6']; strokeWidth = [2];
                     } 
                     // Comparison Configurations
@@ -819,11 +829,11 @@
                     } else if (selection === 'compPhEc') {
                         series = [
                             { name: 'pH', type: 'area', data: soilPh },
-                            { name: 'Conductivity (mS/cm)', type: 'area', data: soilEc }
+                            { name: 'Conductivity (PPM)', type: 'area', data: soilEc }
                         ];
                         yaxisOptions = [
                             { seriesName: 'pH', title: { text: 'pH', style: { color: '#ec4899' } }, labels: { style: { colors: '#ec4899' }, formatter: v => v.toFixed(2) } },
-                            { seriesName: 'Conductivity (mS/cm)', opposite: true, title: { text: 'Conductivity (mS/cm)', style: { color: '#14b8a6' } }, labels: { style: { colors: '#14b8a6' }, formatter: v => v.toFixed(2) } }
+                            { seriesName: 'Conductivity (PPM)', opposite: true, title: { text: 'Conductivity (PPM)', style: { color: '#14b8a6' } }, labels: { style: { colors: '#14b8a6' }, formatter: v => v.toFixed(0) } }
                         ];
                         colors = ['#ec4899', '#14b8a6']; strokeWidth = [2, 2];
                     }
@@ -843,8 +853,13 @@
                         title: { text: 'Filter Aktif: Despike Anomaly & Moving Average', align: 'left', style: { fontSize: '11px', color: '#64748b', fontWeight: 'normal' } }
                     };
                     
-                    el._chart = new ApexCharts(el, opt);
-                    el._chart.render();
+                    if (el._chart && silent) {
+                        el._chart.updateOptions(opt, false, false);
+                    } else {
+                        if (el._chart) el._chart.destroy();
+                        el._chart = new ApexCharts(el, opt);
+                        el._chart.render();
+                    }
                 };
 
                 // Add event listener to dropdown
@@ -932,7 +947,7 @@
             }
         }
 
-        /* ── Gauge & Meter Helpers ─────────────────── */
+        /* â”€â”€ Gauge & Meter Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
         const GAUGE_CIRCUMFERENCE = 201.06; // 2 * PI * 32
 
         function setMetricText(id, value, unit) {
@@ -1009,27 +1024,30 @@
             // Default Meja 1 (Suhu & Moisture text, EC & pH gauge)
             setMetricText('vM1Suhu', 23.5, '°C');
             setMetricText('vM1Humid', 71, '%');
-            updateGauge('cM1EC', 'vM1EC', 1.20, 0, 130, '');
+            updateGauge('cM1EC', 'vM1EC', 600, 0, 2000, '');
             updateGauge('cM1pH', 'vM1pH', 6.5, 0, 14, '');
 
             // Default Meja 2
             setMetricText('vM2Suhu', 23.8, '°C');
             setMetricText('vM2Humid', 68, '%');
-            updateGauge('cM2EC', 'vM2EC', 1.10, 0, 130, '');
+            updateGauge('cM2EC', 'vM2EC', 550, 0, 2000, '');
             updateGauge('cM2pH', 'vM2pH', 6.2, 0, 14, '');
 
             // Default Meja 3
             setMetricText('vM3Suhu', 24.1, '°C');
             setMetricText('vM3Humid', 75, '%');
-            updateGauge('cM3EC', 'vM3EC', 1.40, 0, 130, '');
+            updateGauge('cM3EC', 'vM3EC', 700, 0, 2000, '');
             updateGauge('cM3pH', 'vM3pH', 6.7, 0, 14, '');
 
             // Polling telemetry real-time
             fetchRealTimeTelemetry();
-            setInterval(fetchRealTimeTelemetry, 30000);
+            setInterval(fetchRealTimeTelemetry, 15000); // Dipercepat dari 30s ke 15s
+
+            // Data Logger real-time
+            fetchAndPopulateLogs();
+            setInterval(() => fetchAndPopulateLogs(true), 15000); // Silent update tiap 15 detik untuk chart dan tabel logger
 
             // Cuaca awal dan berkala
-            fetchAndPopulateLogs();
             fetchWeather();
             setInterval(fetchWeather, 600000);
         });
@@ -1108,7 +1126,7 @@
                     if (data.meja1) {
                         setMetricText('vM1Suhu', data.meja1.suhu, '°C');
                         setMetricText('vM1Humid', data.meja1.kelembapan, '%');
-                        updateGauge('cM1EC', 'vM1EC', data.meja1.ec, 0, 130, '');
+                        updateGauge('cM1EC', 'vM1EC', data.meja1.ec, 0, 2000, '');
                         updateGauge('cM1pH', 'vM1pH', data.meja1.ph, 0, 14, '');
                     }
 
@@ -1116,7 +1134,7 @@
                     if (data.meja2) {
                         setMetricText('vM2Suhu', data.meja2.suhu, '°C');
                         setMetricText('vM2Humid', data.meja2.kelembapan, '%');
-                        updateGauge('cM2EC', 'vM2EC', data.meja2.ec, 0, 130, '');
+                        updateGauge('cM2EC', 'vM2EC', data.meja2.ec, 0, 2000, '');
                         updateGauge('cM2pH', 'vM2pH', data.meja2.ph, 0, 14, '');
                     }
 
@@ -1124,8 +1142,55 @@
                     if (data.meja3) {
                         setMetricText('vM3Suhu', data.meja3.suhu, '°C');
                         setMetricText('vM3Humid', data.meja3.kelembapan, '%');
-                        updateGauge('cM3EC', 'vM3EC', data.meja3.ec, 0, 130, '');
+                        updateGauge('cM3EC', 'vM3EC', data.meja3.ec, 0, 2000, '');
                         updateGauge('cM3pH', 'vM3pH', data.meja3.ph, 0, 14, '');
+                    }
+
+                    // Sinkronisasi Aktuator dari MQTT
+                    if (data.actuators) {
+                        const acts = data.actuators;
+                        
+                        // Update UI Toggles & Badges
+                        const deviceMap = {
+                            exhaust_fan: 'exhaust_fanSwitch',
+                            penyiraman_air: 'penyiraman_airSwitch',
+                            penyiraman_pupuk: 'penyiraman_pupukSwitch',
+                            mist_ruangan: 'mist_ruanganSwitch'
+                        };
+                        const statusMap = {
+                            exhaust_fan: { statusId: 'fanStatus', boxId: 'fanBox' },
+                            penyiraman_air: { statusId: 'siramAirStatus', boxId: 'siramAirBox' },
+                            penyiraman_pupuk: { statusId: 'pupukStatus', boxId: 'pupukBox' },
+                            mist_ruangan: { statusId: 'mistRoomStatus', boxId: 'mistRoomBox' }
+                        };
+
+                        for (const key in deviceMap) {
+                            const sw = document.getElementById(deviceMap[key]);
+                            if (sw && acts[key] !== undefined) {
+                                sw.checked = acts[key] === 1;
+                                updateActuatorUI(statusMap[key].statusId, statusMap[key].boxId, acts[key]);
+                                currentActuators[key] = acts[key];
+                            }
+                        }
+
+                        // Sinkronisasi Mode (Jika berubah dari alat fisik/MQTT lain)
+                        if (acts.mode && actuatorMode !== acts.mode) {
+                            actuatorMode = acts.mode;
+                            document.getElementById('btnModeAuto').classList.toggle('active', acts.mode === 'auto');
+                            document.getElementById('btnModeManual').classList.toggle('active', acts.mode === 'manual');
+                            
+                            const gridContainer = document.getElementById('actuatorsGridContainer');
+                            if (gridContainer) {
+                                if (acts.mode === 'auto') gridContainer.classList.add('locked');
+                                else gridContainer.classList.remove('locked');
+                            }
+                            
+                            document.getElementById('modeDesc').innerText = acts.mode === 'auto'
+                                ? 'Mode otomatis aktif. Aktuator dikontrol AI berdasarkan data sensor secara real-time.'
+                                : 'Mode manual aktif. Anda bebas menyalakan/mematikan aktuator dengan sakelar berikut.';
+                            
+                            document.querySelectorAll('.actuator-switch').forEach(sw => sw.disabled = acts.mode === 'auto');
+                        }
                     }
                 }
             } catch (e) {
@@ -1133,7 +1198,7 @@
             }
         }
 
-        /* ─── MAC DOCK MAGNIFICATION LOGIC ─── */
+        /* â”€â”€â”€ MAC DOCK MAGNIFICATION LOGIC â”€â”€â”€ */
         const macDock = document.getElementById('macDock');
         const dockItems = macDock ? macDock.querySelectorAll('.dock-item') : [];
         const maxScale = 1.4;
