@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 
 <head>
@@ -896,11 +896,11 @@
                 <div class="chart-wrap">
                     <div class="charts-master-container">
                         <div class="section-title"
-                            style="margin-bottom:15px; margin-top: 10px; display:flex; justify-content:space-between; align-items:center;">
+                            style="margin-bottom:15px; margin-top: 10px; display:flex; flex-wrap: wrap; justify-content:space-between; align-items:center; gap: 10px;">
                             <div><i data-lucide="bar-chart-2"></i> Grafik Analisis Sentral</div>
-                            <div style="display:flex; gap: 10px;">
+                            <div style="display:flex; flex-wrap: wrap; gap: 10px;">
                                 <select id="timeRangeSelector"
-                                    style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; font-size: 13px; font-family: 'Inter', sans-serif; cursor: pointer; color: #1e293b; outline: none; font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,0.05);"
+                                    style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; font-size: 13px; font-family: 'Inter', sans-serif; cursor: pointer; color: #1e293b; outline: none; font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,0.05); max-width: 100%;"
                                     onchange="fetchAndPopulateLogs()">
                                     <option value="1h">1 Jam Terakhir</option>
                                     <option value="3h">3 Jam Terakhir</option>
@@ -910,7 +910,7 @@
                                     <option value="1m">1 Bulan Terakhir</option>
                                 </select>
                                 <select id="mainChartSelector"
-                                    style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; font-size: 13px; font-family: 'Inter', sans-serif; cursor: pointer; color: #1e293b; outline: none; font-weight: 500; min-width: 200px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                    style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; font-size: 13px; font-family: 'Inter', sans-serif; cursor: pointer; color: #1e293b; outline: none; font-weight: 500; min-width: 200px; max-width: 100%; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                                     <option value="envSuhu">Suhu Lingkungan (°C)</option>
                                     <option value="envHumid">Kelembapan Lingkungan (%)</option>
                                     <option value="envLux">Cahaya (Lux)</option>
