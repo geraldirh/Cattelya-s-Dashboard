@@ -317,7 +317,10 @@ def on_mqtt_message(client, userdata, msg):
             latest_setpoints["durasi"] = payload
             
         elif topic in [TOPIC_STATUS_MODE, TOPIC_RECEIPT_MODE]:
-            mode_val = "manual" if payload.get("Mode", False) else "auto"
+            val = payload.get("Mode", payload.get("mode", False))
+            if isinstance(val, str):
+                val = val.strip().lower() in ["true", "1", "on"]
+            mode_val = "manual" if val else "auto"
             latest_actuators["mode"] = mode_val
             if mode_val == "manual":
                 actuator_recap_minute["manual_triggered"] = True
@@ -363,7 +366,9 @@ def start_mqtt_client():
         return
 
     # Use paho-mqtt v2 callback style compatible
-    client = mqtt.Client(client_id="fastapi_backend", callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
+    import uuid
+    client_id = f"fastapi_backend_{uuid.uuid4().hex[:8]}"
+    client = mqtt.Client(client_id=client_id, callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
     
     # Gunakan enkripsi TLS (SSL) hanya jika port menggunakan 8883
     if mqtt_port == 8883:
@@ -1250,9 +1255,13 @@ async def control_actuator(req: ControlRequest, background_tasks: BackgroundTask
             topic = f"inianggrek/control/{req.device}"
             payload = json.dumps({"status": req.state})
 
-        mqtt_client_instance.publish(topic, payload)
+        result = mqtt_client_instance.publish(topic, payload)
+        if result.rc != mqtt.MQTT_ERR_SUCCESS:
+            raise HTTPException(status_code=500, detail=f"MQTT Publish failed with return code {result.rc} (Disconnected?)")
 
         return {"status": "success", "message": f"Command sent to {topic}", "payload": payload}
+    except HTTPException as he:
+        raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to send MQTT command: {str(e)}")
 
