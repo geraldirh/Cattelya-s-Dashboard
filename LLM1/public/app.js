@@ -1,7 +1,7 @@
 /* â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
         let chatAttachedImageBase64 = null;
         let logsChart = null;
-        let actuatorMode = 'auto';
+        let actuatorMode = 'unknown';
 
         // Persistent Client ID to keep chats isolated per browser
         let clientId = localStorage.getItem("orchid_client_id");
@@ -1175,7 +1175,7 @@
                         }
 
                         // Sinkronisasi Mode (Jika berubah dari alat fisik/MQTT lain)
-                        if (acts.mode && actuatorMode !== acts.mode) {
+                        if (acts.mode && acts.mode !== 'unknown' && actuatorMode !== acts.mode) {
                             actuatorMode = acts.mode;
                             document.getElementById('btnModeAuto').classList.toggle('active', acts.mode === 'auto');
                             document.getElementById('btnModeManual').classList.toggle('active', acts.mode === 'manual');

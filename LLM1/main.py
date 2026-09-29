@@ -124,7 +124,7 @@ latest_actuators = {
     "penyiraman_air": 0,
     "penyiraman_pupuk": 0,
     "mist_ruangan": 0,
-    "mode": "auto"
+    "mode": "unknown"
 }
 
 # Buffer & Rekap per Menit
@@ -317,7 +317,7 @@ def on_mqtt_message(client, userdata, msg):
             latest_setpoints["durasi"] = payload
             
         elif topic in [TOPIC_STATUS_MODE, TOPIC_RECEIPT_MODE]:
-            mode_val = "auto" if payload.get("Mode", False) else "manual"
+            mode_val = "manual" if payload.get("Mode", False) else "auto"
             latest_actuators["mode"] = mode_val
             if mode_val == "manual":
                 actuator_recap_minute["manual_triggered"] = True
@@ -384,49 +384,47 @@ def start_mqtt_client():
         print(f"Error connecting to MQTT: {e}")
 
 async def log_telemetry_to_supabase():
-    last_logged_minute = ""
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
+    last_logged_minute = now_utc.strftime("%Y-%m-%d %H:%M")
+    
     while True:
         try:
-            # Sinkronisasi sleep tepat ke batas awal menit berikutnya (:00.00 detik)
+            # Kalkulasi waktu tidur menuju awal menit berikutnya (detik 00)
             now = datetime.datetime.now()
             sleep_duration = 60.0 - now.second - (now.microsecond / 1_000_000.0)
-            if sleep_duration <= 0.05:
-                sleep_duration += 60.0
+            if sleep_duration <= 0.01:
+                sleep_duration = 60.0
+                
             await asyncio.sleep(sleep_duration)
             
-            # Eksekusi tepat di detik :00
             now_utc = datetime.datetime.now(datetime.timezone.utc)
-            aligned_utc = now_utc.replace(second=0, microsecond=0)
-            minute_key = aligned_utc.strftime("%Y-%m-%d %H:%M")
+            current_minute = now_utc.strftime("%Y-%m-%d %H:%M")
             
-            # Cegah duplikasi penulisan pada menit yang sama
-            if minute_key == last_logged_minute:
-                continue
-            last_logged_minute = minute_key
-            
-            target_iso = aligned_utc.strftime("%Y-%m-%dT%H:%M:00Z")
-            
-            # Log jika data MQTT aktif (terakhir diterima dalam 5 menit terakhir)
-            last_upd = latest_telemetry.get("last_update", 0)
-            has_active_stream = (time.time() - last_upd) < 300 or len(telemetry_minute_buffer) > 0
-            
-            if supabase and has_active_stream:
-                telemetry_data = process_minute_telemetry()
-                actuator_data = process_minute_actuators()
+            # Hanya eksekusi jika sudah benar-benar masuk menit baru
+            if current_minute != last_logged_minute:
+                last_logged_minute = current_minute
+                target_iso = now_utc.replace(second=0, microsecond=0).strftime("%Y-%m-%dT%H:%M:00Z")
                 
-                # Samakan waktu secara presisi di 00 detik
-                telemetry_data["created_at"] = target_iso
-                actuator_data["created_at"] = target_iso
+                # Log jika data MQTT aktif (terakhir diterima dalam 5 menit terakhir)
+                last_upd = latest_telemetry.get("last_update", 0)
+                has_active_stream = (time.time() - last_upd) < 300 or len(telemetry_minute_buffer) > 0
                 
-                # Cek apakah stempel waktu ini sudah dicatat oleh server lain (misal: Render vs Localhost)
-                check_exist = supabase.table("sensor_logs").select("id").eq("created_at", target_iso).limit(1).execute()
-                if check_exist.data:
-                    print(f"[LOG SYNC 00] Skip: Data for {target_iso} already inserted by another instance.")
-                    continue
-
-                supabase.table("sensor_logs").insert(telemetry_data).execute()
-                supabase.table("actuator_logs").insert(actuator_data).execute()
-                print(f"[LOG SYNC 00] 1-Min Data recorded to Supabase at {target_iso}")
+                if supabase and has_active_stream:
+                    telemetry_data = process_minute_telemetry()
+                    actuator_data = process_minute_actuators()
+                    
+                    # Samakan waktu secara presisi di 00 detik
+                    telemetry_data["created_at"] = target_iso
+                    actuator_data["created_at"] = target_iso
+                    
+                    # Cek apakah stempel waktu ini sudah dicatat oleh server lain
+                    check_exist = supabase.table("sensor_logs").select("id").eq("created_at", target_iso).limit(1).execute()
+                    if check_exist.data:
+                        print(f"[LOG SYNC 00] Skip: Data for {target_iso} already inserted by another instance.")
+                    else:
+                        supabase.table("sensor_logs").insert(telemetry_data).execute()
+                        supabase.table("actuator_logs").insert(actuator_data).execute()
+                        print(f"[LOG SYNC 00] 1-Min Data recorded to Supabase at {target_iso}")
                 
         except Exception as e:
             print(f"Error in 1-min Supabase logger: {e}")
@@ -1217,8 +1215,8 @@ async def control_actuator(req: ControlRequest, background_tasks: BackgroundTask
         if req.device == "mode_switch":
             topic = TOPIC_CONTROL_MODE
             payload = json.dumps({"Mode": bool(req.state)})
-            latest_actuators["mode"] = "auto" if req.state == 1 else "manual"
-            if req.state == 0:
+            latest_actuators["mode"] = "manual" if req.state == 1 else "auto"
+            if req.state == 1:
                 actuator_recap_minute["manual_triggered"] = True
         elif req.device == "mist_ruangan":
             topic = TOPIC_CONTROL_SPRAY
