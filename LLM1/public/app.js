@@ -893,7 +893,7 @@
             const payloadSensor = {
                 Suhu_Siang: parseFloat(document.getElementById('spSuhuSiang').value) || 0,
                 Suhu_Malam: parseFloat(document.getElementById('spSuhuMalam').value) || 0,
-                Hum_low: parseFloat(document.getElementById('spHumLow').value) || 0,
+                Hum_Low: parseFloat(document.getElementById('spHumLow').value) || 0,
                 TDS_Sp: parseFloat(document.getElementById('spTDSSp').value) || 0,
                 Soil_Temp: parseFloat(document.getElementById('spSoilTemp').value) || 0,
                 Soil_moist: parseFloat(document.getElementById('spSoilMoist').value) || 0

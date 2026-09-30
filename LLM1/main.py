@@ -558,7 +558,7 @@ import datetime
 class SetpointSensor(BaseModel):
     Suhu_Siang: float
     Suhu_Malam: float
-    Hum_low: float
+    Hum_Low: float
     TDS_Sp: float
     Soil_Temp: float
     Soil_moist: float
@@ -951,7 +951,7 @@ def set_greenhouse_thresholds(
     payload_dict = {
         "Suhu_Siang": suhu_siang,
         "Suhu_Malam": suhu_malam,
-        "Hum_low": hum_low,
+        "Hum_Low": hum_low,
         "TDS_Sp": tds_sp,
         "Soil_Temp": soil_temp,
         "Soil_moist": soil_moist
