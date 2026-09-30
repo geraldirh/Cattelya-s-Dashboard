@@ -615,10 +615,9 @@
                         mist_ruangan: '-'
                     };
                     const onColor = (v, c) => v === 1 ? `color:${c};font-weight:bold` : ''
-                    const modeStr = actions.mode === 'manual' ? '<span style="color:var(--primary);font-weight:bold">M</span>' : '<span style="color:var(--info);font-weight:bold">A</span>';
+                    const modeStr = actions.mode === 'manual' ? '<span style="color:var(--primary);font-weight:bold">Manual</span>' : '<span style="color:var(--info);font-weight:bold">Auto</span>';
                     tr.innerHTML = `
                 <td><b>${log.timestamp || '-'}</b></td>
-                <td>${modeStr}</td>
                 <td>${log.air_temperature != null ? log.air_temperature + '°C' : '-'}</td>
                 <td>${log.air_humidity != null ? log.air_humidity + '%' : '-'}</td>
                 <td>${log.lux != null ? log.lux + ' Lux' : '-'}</td>
@@ -626,6 +625,7 @@
                 <td>${log.meja1?.kelembapan != null ? log.meja1.kelembapan + '%' : '-'}</td>
                 <td>${log.meja2?.kelembapan != null ? log.meja2.kelembapan + '%' : '-'}</td>
                 <td>${log.meja3?.kelembapan != null ? log.meja3.kelembapan + '%' : '-'}</td>
+                <td>${modeStr}</td>
                 <td><span style="${onColor(actions.exhaust_fan, 'var(--primary)')}">${actions.exhaust_fan}</span></td>
                 <td><span style="${onColor(actions.penyiraman_air, 'var(--info)')}">${actions.penyiraman_air}</span></td>
                 <td><span style="${onColor(actions.penyiraman_pupuk, 'var(--accent)')}">${actions.penyiraman_pupuk}</span></td>
