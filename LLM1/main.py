@@ -746,16 +746,6 @@ async def analyze_greenhouse_metrics(metrics: GreenhouseMetrics):
         else:
             final_actions = result_json.get("actions", {})
 
-        # Update latest_actuators global state agar dicatat oleh Supabase logger
-        global latest_actuators
-        latest_actuators.update(final_actions)
-        latest_actuators["mode"] = metrics.mode
-        for dev, st in final_actions.items():
-            if st == 1:
-                actuator_recap_minute[dev] = 1
-        if metrics.mode == "manual":
-            actuator_recap_minute["manual_triggered"] = True
-
         # Update latest telemetry global state agar data dashboard sinkron dengan custom dummy
         latest_telemetry["air_temperature"] = metrics.air_temperature
         latest_telemetry["air_humidity"] = metrics.air_humidity
@@ -774,7 +764,7 @@ async def analyze_greenhouse_metrics(metrics: GreenhouseMetrics):
         latest_telemetry["meja3"]["ec"] = metrics.meja3.ec
         latest_telemetry["meja3"]["ph"] = metrics.meja3.ph
 
-        # Catat ke dalam Data Logger
+        # Catat ke dalam Data Logger (Hanya untuk UI/Sensor_logs internal, bukan Supabase)
         new_log = {
             "timestamp": datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
             "air_temperature": metrics.air_temperature,
@@ -792,29 +782,6 @@ async def analyze_greenhouse_metrics(metrics: GreenhouseMetrics):
         # Batasi log maksimal 100 entri terakhir
         if len(sensor_logs) > 100:
             sensor_logs.pop(0)
-            
-        # Cek apakah PLC offline (tidak ada data MQTT lebih dari 5 menit / 300 detik)
-        plc_offline = (time.time() - latest_telemetry.get("last_update", 0)) > 300
-
-        # Jika mode auto dan PLC aktif, kirim command MQTT secara otomatis ke aktuator
-        if metrics.mode == "auto" and mqtt_client_instance and not plc_offline:
-            try:
-                mqtt_client_instance.publish(TOPIC_CONTROL_MODE, json.dumps({"Mode": False}))
-                if final_actions.get("mist_ruangan", 0) == 1:
-                    mqtt_client_instance.publish(TOPIC_CONTROL_SPRAY, json.dumps({"Spray": True}))
-                if final_actions.get("penyiraman_air", 0) == 1:
-                    mqtt_client_instance.publish(TOPIC_CONTROL_MURNI, json.dumps({"Murni": True}))
-                if final_actions.get("penyiraman_pupuk", 0) == 1:
-                    mqtt_client_instance.publish(TOPIC_CONTROL_NUTRISI, json.dumps({"Nutrisi": True}))
-                if final_actions.get("exhaust_fan", 0) == 1:
-                    mqtt_client_instance.publish(TOPIC_CONTROL_EXHAUST, json.dumps({"Fan": True}))
-                
-                # Trigger auto off after 3 seconds for water/mist devices
-                for device, state in final_actions.items():
-                    if state == 1 and device in ["penyiraman_air", "penyiraman_pupuk", "mist_ruangan"]:
-                        asyncio.create_task(auto_off_actuator(final_actions, device, 3))
-            except Exception as e:
-                print(f"Error publishing auto command: {e}")
 
         return result_json
         
