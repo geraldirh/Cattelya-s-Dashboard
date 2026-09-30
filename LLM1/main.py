@@ -859,7 +859,8 @@ async def get_logs(period: str = "1h"):
                         "exhaust_fan": act_row.get("exhaust_fan", 0),
                         "penyiraman_air": act_row.get("penyiraman_air", 0),
                         "penyiraman_pupuk": act_row.get("penyiraman_pupuk", 0),
-                        "mist_ruangan": act_row.get("mist_ruangan", 0)
+                        "mist_ruangan": act_row.get("mist_ruangan", 0),
+                        "mode": act_row.get("mode", "auto")
                     }
                 }
 

@@ -615,8 +615,10 @@
                         mist_ruangan: '-'
                     };
                     const onColor = (v, c) => v === 1 ? `color:${c};font-weight:bold` : ''
+                    const modeStr = actions.mode === 'manual' ? '<span style="color:var(--primary);font-weight:bold">M</span>' : '<span style="color:var(--info);font-weight:bold">A</span>';
                     tr.innerHTML = `
                 <td><b>${log.timestamp || '-'}</b></td>
+                <td>${modeStr}</td>
                 <td>${log.air_temperature != null ? log.air_temperature + '°C' : '-'}</td>
                 <td>${log.air_humidity != null ? log.air_humidity + '%' : '-'}</td>
                 <td>${log.lux != null ? log.lux + ' Lux' : '-'}</td>
