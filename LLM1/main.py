@@ -994,12 +994,15 @@ def query_database_stats(hours: int) -> str:
         fan_str, _ = get_streak_info("exhaust_fan", "Kipas Exhaust")
         air_str, air_total = get_streak_info("penyiraman_air", "Pompa Air")
         pupuk_str, pupuk_total = get_streak_info("penyiraman_pupuk", "Pompa Pupuk")
-        mist_str, _ = get_streak_info("mist_ruangan", "Mist Ruangan")
+        mist_str, mist_total = get_streak_info("mist_ruangan", "Mist Ruangan")
         
-        # Kalkulasi konsumsi air dan pupuk (50 ml per 45 detik -> 66.67 ml per menit)
-        ml_per_minute = (50 / 45) * 60
-        air_volume = air_total * ml_per_minute / 1000  # dalam Liter
-        pupuk_volume = pupuk_total * ml_per_minute / 1000 # dalam Liter
+        # Kalkulasi konsumsi air dan pupuk (50 ml per 45 detik per pot x 60 pot)
+        ml_per_minute_pompa = (50 / 45) * 60 * 60
+        air_volume = air_total * ml_per_minute_pompa / 1000  # dalam Liter
+        pupuk_volume = pupuk_total * ml_per_minute_pompa / 1000 # dalam Liter
+        
+        # Kalkulasi konsumsi mist (100 ml per menit)
+        mist_volume = mist_total * 100 / 1000 # dalam Liter
         
         return (f"=== Laporan {limit_hours} Jam Terakhir ({count} rekaman) ===\n"
                 f"- Rata-rata Suhu: {avg_temp:.1f}°C\n"
@@ -1008,6 +1011,7 @@ def query_database_stats(hours: int) -> str:
                 f"- Rata-rata TDS: {avg_tds:.0f} ppm\n"
                 f"- Estimasi Konsumsi Air Murni: {air_volume:.2f} Liter\n"
                 f"- Estimasi Konsumsi Air Nutrisi/Pupuk: {pupuk_volume:.2f} Liter\n"
+                f"- Estimasi Konsumsi Air Mist: {mist_volume:.2f} Liter\n"
                 f"- Frekuensi & Rekor Aktuator:\n"
                 f"{fan_str}\n"
                 f"{air_str}\n"
