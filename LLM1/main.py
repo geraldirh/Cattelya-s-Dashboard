@@ -1028,7 +1028,8 @@ def get_weather_forecast(lat: float = -6.2088, lon: float = 106.8456) -> str:
     import json
     try:
         url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,rain_sum&timezone=auto"
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        # Gunakan User-Agent spesifik agar tidak diblokir (429 Too Many Requests) oleh penyedia API
+        req = urllib.request.Request(url, headers={'User-Agent': 'OrchidCare-Greenhouse-IoT-App/1.0'})
         with urllib.request.urlopen(req, timeout=10) as response:
             if response.status == 200:
                 data = json.loads(response.read().decode())
