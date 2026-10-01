@@ -1020,6 +1020,39 @@ def query_database_stats(hours: int) -> str:
     except Exception as e:
         return f"Terjadi kesalahan saat membaca database: {e}"
 
+def get_weather_forecast(lat: float = -6.2088, lon: float = 106.8456) -> str:
+    """Mengambil prakiraan cuaca (suhu, curah hujan) untuk 3 hari ke depan menggunakan Open-Meteo API.
+    Panggil fungsi ini saat pengguna menanyakan prediksi cuaca, ramalan cuaca besok, atau jika Anda (AI) membutuhkan konteks cuaca untuk memberikan saran perawatan preventif yang proaktif.
+    """
+    import urllib.request
+    import json
+    try:
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,rain_sum&timezone=auto"
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=10) as response:
+            if response.status == 200:
+                data = json.loads(response.read().decode())
+                daily = data.get("daily", {})
+                times = daily.get("time", [])
+                t_max = daily.get("temperature_2m_max", [])
+                t_min = daily.get("temperature_2m_min", [])
+                rain_prob = daily.get("precipitation_probability_max", [])
+                rain_sum = daily.get("rain_sum", [])
+                
+                res_str = "=== PRAKIRAAN CUACA 3 HARI KE DEPAN ===\n"
+                for i in range(min(3, len(times))):
+                    res_str += f"- Tanggal: {times[i]}\n"
+                    res_str += f"  Suhu: {t_min[i]}°C - {t_max[i]}°C\n"
+                    res_str += f"  Peluang Hujan: {rain_prob[i]}%\n"
+                    res_str += f"  Total Hujan: {rain_sum[i]} mm\n"
+                
+                res_str += "\nAnalisis AI: Jadikan acuan data ini untuk saran preventif (misal: kurangi batas/threshold air jika besok hujan lebat, tingkatkan jika besok panas terik)."
+                return res_str
+            else:
+                return "Gagal mengambil data cuaca dari API satelit."
+    except Exception as e:
+        return f"Terjadi kesalahan saat memanggil API Cuaca: {e}"
+
 @app.post("/chat")
 async def chat_orchid(request: ChatRequest):
     # Pastikan API key sudah diatur
@@ -1043,14 +1076,15 @@ async def chat_orchid(request: ChatRequest):
             "2. Anda BOLEH membaca dan menganalisis KONDISI GREENHOUSE SAAT INI di atas jika pengguna bertanya tentang keadaan greenhouse (contoh: 'Berapa suhu sekarang?', 'Apakah GH aman?').\n"
             "3. Jika Anda menilai kondisinya tidak wajar (misal suhu >35C atau <20C, kelembapan terlalu rendah), sarankan solusi atau perubahan batas suhu.\n"
             "4. Jika pengguna meminta Anda untuk menyetel, mengubah, atau menerapkan parameter (misalnya 'atur parameter ke suhu 28', 'bantu setel parameter yang ideal'), Anda memiliki ALAT (Function Calling) bernama `set_greenhouse_thresholds` untuk mengubahnya secara langsung! Eksekusi alat tersebut dengan angka yang tepat untuk Suhu Siang, Suhu Malam, Hum low, TDS, dll sesuai standar anggrek (seperti Phalaenopsis atau Dendrobium) atau sesuai angka permintaan pengguna.\n"
-            "5. Jika pengguna menanyakan riwayat/statistik, rekor menyala terlama, atau ESTIMASI KONSUMSI AIR & PUPUK (contoh: 'berapa liter air yang dipakai hari ini?'), JANGAN MENEBAK, gunakan alat `query_database_stats` untuk menghitung datanya langsung dari database.\n\n"
+            "5. Jika pengguna menanyakan riwayat/statistik, rekor menyala terlama, atau ESTIMASI KONSUMSI AIR & PUPUK (contoh: 'berapa liter air yang dipakai hari ini?'), JANGAN MENEBAK, gunakan alat `query_database_stats` untuk menghitung datanya langsung dari database.\n"
+            "6. Jika pengguna menanyakan prakiraan cuaca atau Anda butuh data cuaca untuk merencanakan perawatan hari esok, gunakan alat `get_weather_forecast`.\n\n"
             "PENTING: Anda hanya boleh membahas hal seputar anggrek dan kendali Greenhouse. Tolak pertanyaan di luar itu dengan sopan."
         )
         
         model = genai.GenerativeModel(
             model_name='gemini-3.5-flash-lite',
             system_instruction=system_instruction,
-            tools=[set_greenhouse_thresholds, query_database_stats]
+            tools=[set_greenhouse_thresholds, query_database_stats, get_weather_forecast]
         )
         
         # Konversi history ke format API SDK Gemini
