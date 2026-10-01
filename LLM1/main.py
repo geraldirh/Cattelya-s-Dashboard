@@ -980,27 +980,34 @@ def query_database_stats(hours: int) -> str:
                 best_start = curr_start
                 
             if max_streak == 0:
-                return f"  * {display_name}: 0 menit (Tidak pernah menyala)"
+                return f"  * {display_name}: 0 menit (Tidak pernah menyala)", 0
             
             # Ubah waktu UTC ke WIB untuk output string
             try:
                 dt_utc = datetime.datetime.fromisoformat(best_start.replace("Z", "+00:00"))
                 dt_wib = dt_utc + datetime.timedelta(hours=7)
                 str_start = dt_wib.strftime("%A, %H:%M WIB")
-                return f"  * {display_name}: {total_on} menit (Menyala tanpa henti terlama {max_streak} menit pada {str_start})"
+                return f"  * {display_name}: {total_on} menit (Menyala tanpa henti terlama {max_streak} menit pada {str_start})", total_on
             except:
-                return f"  * {display_name}: {total_on} menit (Menyala tanpa henti terlama {max_streak} menit)"
+                return f"  * {display_name}: {total_on} menit (Menyala tanpa henti terlama {max_streak} menit)", total_on
 
-        fan_str = get_streak_info("exhaust_fan", "Kipas Exhaust")
-        air_str = get_streak_info("penyiraman_air", "Pompa Air")
-        pupuk_str = get_streak_info("penyiraman_pupuk", "Pompa Pupuk")
-        mist_str = get_streak_info("mist_ruangan", "Mist Ruangan")
+        fan_str, _ = get_streak_info("exhaust_fan", "Kipas Exhaust")
+        air_str, air_total = get_streak_info("penyiraman_air", "Pompa Air")
+        pupuk_str, pupuk_total = get_streak_info("penyiraman_pupuk", "Pompa Pupuk")
+        mist_str, _ = get_streak_info("mist_ruangan", "Mist Ruangan")
+        
+        # Kalkulasi konsumsi air dan pupuk (50 ml per 45 detik -> 66.67 ml per menit)
+        ml_per_minute = (50 / 45) * 60
+        air_volume = air_total * ml_per_minute / 1000  # dalam Liter
+        pupuk_volume = pupuk_total * ml_per_minute / 1000 # dalam Liter
         
         return (f"=== Laporan {limit_hours} Jam Terakhir ({count} rekaman) ===\n"
                 f"- Rata-rata Suhu: {avg_temp:.1f}°C\n"
                 f"- Rata-rata Kelembapan: {avg_hum:.1f}%\n"
                 f"- Rata-rata Cahaya: {avg_lux:.0f} Lux\n"
                 f"- Rata-rata TDS: {avg_tds:.0f} ppm\n"
+                f"- Estimasi Konsumsi Air Murni: {air_volume:.2f} Liter\n"
+                f"- Estimasi Konsumsi Air Nutrisi/Pupuk: {pupuk_volume:.2f} Liter\n"
                 f"- Frekuensi & Rekor Aktuator:\n"
                 f"{fan_str}\n"
                 f"{air_str}\n"
@@ -1032,7 +1039,7 @@ async def chat_orchid(request: ChatRequest):
             "2. Anda BOLEH membaca dan menganalisis KONDISI GREENHOUSE SAAT INI di atas jika pengguna bertanya tentang keadaan greenhouse (contoh: 'Berapa suhu sekarang?', 'Apakah GH aman?').\n"
             "3. Jika Anda menilai kondisinya tidak wajar (misal suhu >35C atau <20C, kelembapan terlalu rendah), sarankan solusi atau perubahan batas suhu.\n"
             "4. Jika pengguna meminta Anda untuk menyetel, mengubah, atau menerapkan parameter (misalnya 'atur parameter ke suhu 28', 'bantu setel parameter yang ideal'), Anda memiliki ALAT (Function Calling) bernama `set_greenhouse_thresholds` untuk mengubahnya secara langsung! Eksekusi alat tersebut dengan angka yang tepat untuk Suhu Siang, Suhu Malam, Hum low, TDS, dll sesuai standar anggrek (seperti Phalaenopsis atau Dendrobium) atau sesuai angka permintaan pengguna.\n"
-            "5. Jika pengguna menanyakan riwayat/statistik (contoh: rata-rata suhu hari ini, berapa kali pompa menyala dalam 10 jam terakhir), JANGAN MENEBAK, gunakan alat `query_database_stats` untuk menghitung dan mengambil rekapan datanya langsung dari database.\n\n"
+            "5. Jika pengguna menanyakan riwayat/statistik, rekor menyala terlama, atau ESTIMASI KONSUMSI AIR & PUPUK (contoh: 'berapa liter air yang dipakai hari ini?'), JANGAN MENEBAK, gunakan alat `query_database_stats` untuk menghitung datanya langsung dari database.\n\n"
             "PENTING: Anda hanya boleh membahas hal seputar anggrek dan kendali Greenhouse. Tolak pertanyaan di luar itu dengan sopan."
         )
         
