@@ -930,6 +930,49 @@ def set_greenhouse_thresholds(
     except Exception as e:
         return f"Gagal mengatur threshold karena error: {str(e)}"
 
+def query_database_stats(hours: int) -> str:
+    """Mengambil dan menghitung rata-rata parameter sensor (suhu, kelembapan, dll) serta menghitung frekuensi aktuator (kipas, pompa) menyala dalam rentang waktu jam terakhir dari database.
+    Panggil fungsi ini jika pengguna bertanya tentang nilai rata-rata, statistik, riwayat, atau berapa kali aktuator menyala dalam beberapa rentang jam/waktu terakhir.
+    """
+    global supabase
+    if not supabase:
+        return "Gagal: Database Supabase tidak terhubung."
+    try:
+        limit_hours = max(1, min(hours, 168)) # Maks 7 hari
+        time_threshold = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=limit_hours)).isoformat().replace("+00:00", "Z")
+        
+        sensor_res = supabase.table("sensor_logs").select("*").gte("created_at", time_threshold).execute()
+        act_res = supabase.table("actuator_logs").select("*").gte("created_at", time_threshold).execute()
+        
+        if not sensor_res.data:
+            return f"Tidak ada data log sensor dalam {limit_hours} jam terakhir."
+        
+        data = sensor_res.data
+        count = len(data)
+        avg_temp = sum((d.get("air_temperature") or 0) for d in data) / count
+        avg_hum = sum((d.get("air_humidity") or 0) for d in data) / count
+        avg_lux = sum((d.get("lux") or 0) for d in data) / count
+        avg_tds = sum((d.get("tds") or 0) for d in data) / count
+        
+        act_data = act_res.data
+        fan_count = sum(1 for a in act_data if a.get("exhaust_fan") == 1)
+        air_count = sum(1 for a in act_data if a.get("penyiraman_air") == 1)
+        pupuk_count = sum(1 for a in act_data if a.get("penyiraman_pupuk") == 1)
+        mist_count = sum(1 for a in act_data if a.get("mist_ruangan") == 1)
+        
+        return (f"=== Laporan {limit_hours} Jam Terakhir ({count} rekaman) ===\n"
+                f"- Rata-rata Suhu: {avg_temp:.1f}°C\n"
+                f"- Rata-rata Kelembapan: {avg_hum:.1f}%\n"
+                f"- Rata-rata Cahaya: {avg_lux:.0f} Lux\n"
+                f"- Rata-rata TDS: {avg_tds:.0f} ppm\n"
+                f"- Frekuensi Aktuator Menyala:\n"
+                f"  * Kipas Exhaust: {fan_count} menit\n"
+                f"  * Pompa Air: {air_count} menit\n"
+                f"  * Pompa Pupuk: {pupuk_count} menit\n"
+                f"  * Mist Ruangan: {mist_count} menit")
+    except Exception as e:
+        return f"Terjadi kesalahan saat membaca database: {e}"
+
 @app.post("/chat")
 async def chat_orchid(request: ChatRequest):
     # Pastikan API key sudah diatur
@@ -952,14 +995,15 @@ async def chat_orchid(request: ChatRequest):
             "1. Menjawab pertanyaan pengguna tentang anggrek (perawatan, penyakit, hama, pemupukan, dll).\n"
             "2. Anda BOLEH membaca dan menganalisis KONDISI GREENHOUSE SAAT INI di atas jika pengguna bertanya tentang keadaan greenhouse (contoh: 'Berapa suhu sekarang?', 'Apakah GH aman?').\n"
             "3. Jika Anda menilai kondisinya tidak wajar (misal suhu >35C atau <20C, kelembapan terlalu rendah), sarankan solusi atau perubahan batas suhu.\n"
-            "4. Jika pengguna meminta Anda untuk menyetel, mengubah, atau menerapkan parameter (misalnya 'atur parameter ke suhu 28', 'bantu setel parameter yang ideal'), Anda memiliki ALAT (Function Calling) bernama `set_greenhouse_thresholds` untuk mengubahnya secara langsung! Eksekusi alat tersebut dengan angka yang tepat untuk Suhu Siang, Suhu Malam, Hum low, TDS, dll sesuai standar anggrek (seperti Phalaenopsis atau Dendrobium) atau sesuai angka permintaan pengguna.\n\n"
+            "4. Jika pengguna meminta Anda untuk menyetel, mengubah, atau menerapkan parameter (misalnya 'atur parameter ke suhu 28', 'bantu setel parameter yang ideal'), Anda memiliki ALAT (Function Calling) bernama `set_greenhouse_thresholds` untuk mengubahnya secara langsung! Eksekusi alat tersebut dengan angka yang tepat untuk Suhu Siang, Suhu Malam, Hum low, TDS, dll sesuai standar anggrek (seperti Phalaenopsis atau Dendrobium) atau sesuai angka permintaan pengguna.\n"
+            "5. Jika pengguna menanyakan riwayat/statistik (contoh: rata-rata suhu hari ini, berapa kali pompa menyala dalam 10 jam terakhir), JANGAN MENEBAK, gunakan alat `query_database_stats` untuk menghitung dan mengambil rekapan datanya langsung dari database.\n\n"
             "PENTING: Anda hanya boleh membahas hal seputar anggrek dan kendali Greenhouse. Tolak pertanyaan di luar itu dengan sopan."
         )
         
         model = genai.GenerativeModel(
             model_name='gemini-3.5-flash-lite',
             system_instruction=system_instruction,
-            tools=[set_greenhouse_thresholds]
+            tools=[set_greenhouse_thresholds, query_database_stats]
         )
         
         # Konversi history ke format API SDK Gemini
