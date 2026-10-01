@@ -954,22 +954,58 @@ def query_database_stats(hours: int) -> str:
         avg_lux = sum((d.get("lux") or 0) for d in data) / count
         avg_tds = sum((d.get("tds") or 0) for d in data) / count
         
-        act_data = act_res.data
-        fan_count = sum(1 for a in act_data if a.get("exhaust_fan") == 1)
-        air_count = sum(1 for a in act_data if a.get("penyiraman_air") == 1)
-        pupuk_count = sum(1 for a in act_data if a.get("penyiraman_pupuk") == 1)
-        mist_count = sum(1 for a in act_data if a.get("mist_ruangan") == 1)
+        act_data = sorted(act_res.data, key=lambda x: x.get("created_at", ""))
+        
+        def get_streak_info(device_key, display_name):
+            max_streak = 0
+            curr_streak = 0
+            best_start = ""
+            curr_start = ""
+            total_on = 0
+            
+            for row in act_data:
+                if row.get(device_key) == 1:
+                    if curr_streak == 0:
+                        curr_start = row.get("created_at", "")
+                    curr_streak += 1
+                    total_on += 1
+                else:
+                    if curr_streak > max_streak:
+                        max_streak = curr_streak
+                        best_start = curr_start
+                    curr_streak = 0
+            
+            if curr_streak > max_streak:
+                max_streak = curr_streak
+                best_start = curr_start
+                
+            if max_streak == 0:
+                return f"  * {display_name}: 0 menit (Tidak pernah menyala)"
+            
+            # Ubah waktu UTC ke WIB untuk output string
+            try:
+                dt_utc = datetime.datetime.fromisoformat(best_start.replace("Z", "+00:00"))
+                dt_wib = dt_utc + datetime.timedelta(hours=7)
+                str_start = dt_wib.strftime("%A, %H:%M WIB")
+                return f"  * {display_name}: {total_on} menit (Menyala tanpa henti terlama {max_streak} menit pada {str_start})"
+            except:
+                return f"  * {display_name}: {total_on} menit (Menyala tanpa henti terlama {max_streak} menit)"
+
+        fan_str = get_streak_info("exhaust_fan", "Kipas Exhaust")
+        air_str = get_streak_info("penyiraman_air", "Pompa Air")
+        pupuk_str = get_streak_info("penyiraman_pupuk", "Pompa Pupuk")
+        mist_str = get_streak_info("mist_ruangan", "Mist Ruangan")
         
         return (f"=== Laporan {limit_hours} Jam Terakhir ({count} rekaman) ===\n"
                 f"- Rata-rata Suhu: {avg_temp:.1f}°C\n"
                 f"- Rata-rata Kelembapan: {avg_hum:.1f}%\n"
                 f"- Rata-rata Cahaya: {avg_lux:.0f} Lux\n"
                 f"- Rata-rata TDS: {avg_tds:.0f} ppm\n"
-                f"- Frekuensi Aktuator Menyala:\n"
-                f"  * Kipas Exhaust: {fan_count} menit\n"
-                f"  * Pompa Air: {air_count} menit\n"
-                f"  * Pompa Pupuk: {pupuk_count} menit\n"
-                f"  * Mist Ruangan: {mist_count} menit")
+                f"- Frekuensi & Rekor Aktuator:\n"
+                f"{fan_str}\n"
+                f"{air_str}\n"
+                f"{pupuk_str}\n"
+                f"{mist_str}")
     except Exception as e:
         return f"Terjadi kesalahan saat membaca database: {e}"
 
