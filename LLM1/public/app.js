@@ -554,8 +554,7 @@
                     updateActuatorUI('siramAirStatus', 'siramAirBox', data.actions.penyiraman_air);
                     updateActuatorUI('pupukStatus', 'pupukBox', data.actions.penyiraman_pupuk);
                     updateActuatorUI('mistRoomStatus', 'mistRoomBox', data.actions.mist_ruangan);
-
-
+                }
                 if (redirect) switchTab('greenhouse');
             } catch (err) {
                 alert('Gagal menganalisis: ' + err.message);
