@@ -148,16 +148,7 @@
                     body: JSON.stringify({ device: act, state: state, payload_data: payload })
                 });
 
-                // Auto-off simulation di UI (3 detik) untuk penyiraman & mist
-                if (state === 1 && act !== 'exhaust_fan') {
-                    setTimeout(() => {
-                        if (actuatorMode === 'manual') {
-                            const sw = document.getElementById(act + 'Switch');
-                            if (sw) sw.checked = false;
-                            toggleManualActuator(act, false);
-                        }
-                    }, 3000);
-                }
+
             } catch (err) {
                 console.error("Gagal mengirim perintah ke MQTT:", err);
             }
@@ -564,23 +555,7 @@
                     updateActuatorUI('pupukStatus', 'pupukBox', data.actions.penyiraman_pupuk);
                     updateActuatorUI('mistRoomStatus', 'mistRoomBox', data.actions.mist_ruangan);
 
-                    // Auto-off simulation di UI (3 detik) untuk mode Auto
-                    setTimeout(() => {
-                        if (actuatorMode === 'auto') {
-                            autoOffDevices.forEach(device => {
-                                if (data.actions[device] === 1) {
-                                    currentActuators[device] = 0;
-                                    const sw = document.getElementById(device + 'Switch');
-                                    if (sw) sw.checked = false;
-                                }
-                            });
 
-                            if (data.actions.penyiraman_air === 1) updateActuatorUI('siramAirStatus', 'siramAirBox', 0);
-                            if (data.actions.penyiraman_pupuk === 1) updateActuatorUI('pupukStatus', 'pupukBox', 0);
-                            if (data.actions.mist_ruangan === 1) updateActuatorUI('mistRoomStatus', 'mistRoomBox', 0);
-                        }
-                    }, 3000);
-                }
                 if (redirect) switchTab('greenhouse');
             } catch (err) {
                 alert('Gagal menganalisis: ' + err.message);
