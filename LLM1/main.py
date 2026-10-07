@@ -326,25 +326,41 @@ def on_mqtt_message(client, userdata, msg):
                 actuator_recap_minute["manual_triggered"] = True
             
         elif topic in [TOPIC_STATUS_SPRAY, TOPIC_RECEIPT_SPRAY]:
-            val = 1 if payload.get("Spray", False) else 0
+            val_raw = payload.get("Spray", False)
+            if isinstance(val_raw, str):
+                val = 1 if val_raw.strip().lower() in ["true", "1", "on"] else 0
+            else:
+                val = 1 if val_raw else 0
             latest_actuators["mist_ruangan"] = val
             if val == 1:
                 actuator_recap_minute["mist_ruangan"] = 1
             
         elif topic in [TOPIC_STATUS_MURNI, TOPIC_RECEIPT_MURNI]:
-            val = 1 if payload.get("Murni", False) else 0
+            val_raw = payload.get("Murni", False)
+            if isinstance(val_raw, str):
+                val = 1 if val_raw.strip().lower() in ["true", "1", "on"] else 0
+            else:
+                val = 1 if val_raw else 0
             latest_actuators["penyiraman_air"] = val
             if val == 1:
                 actuator_recap_minute["penyiraman_air"] = 1
             
         elif topic in [TOPIC_STATUS_NUTRISI, TOPIC_RECEIPT_NUTRISI]:
-            val = 1 if payload.get("Nutrisi", False) else 0
+            val_raw = payload.get("Nutrisi", False)
+            if isinstance(val_raw, str):
+                val = 1 if val_raw.strip().lower() in ["true", "1", "on"] else 0
+            else:
+                val = 1 if val_raw else 0
             latest_actuators["penyiraman_pupuk"] = val
             if val == 1:
                 actuator_recap_minute["penyiraman_pupuk"] = 1
             
         elif topic in [TOPIC_STATUS_EXHAUST, TOPIC_RECEIPT_EXHAUST]:
-            val = 1 if payload.get("Fan", False) else 0
+            val_raw = payload.get("Fan", False)
+            if isinstance(val_raw, str):
+                val = 1 if val_raw.strip().lower() in ["true", "1", "on"] else 0
+            else:
+                val = 1 if val_raw else 0
             latest_actuators["exhaust_fan"] = val
             if val == 1:
                 actuator_recap_minute["exhaust_fan"] = 1
