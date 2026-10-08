@@ -465,23 +465,17 @@
                 </p>
 
                 <div class="actuator-panel">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap: 10px; flex-wrap: wrap;">
-                        <!-- Mode Control -->
-                        <div class="mode-bar" style="margin-bottom:0; width:auto;">
-                            <span class="mode-label">MODE KONTROL</span>
-                            <div class="mode-pills">
-                                <button class="mode-pill active" id="btnModeAuto" onclick="setActuatorMode('auto')"><i
-                                        data-lucide="bot"></i>
-                                    Auto</button>
-                                <button class="mode-pill" id="btnModeManual" onclick="setActuatorMode('manual')"><i
-                                        data-lucide="settings"></i>
-                                    Manual</button>
-                            </div>
+                    <!-- Mode Control -->
+                    <div class="mode-bar">
+                        <span class="mode-label">MODE KONTROL</span>
+                        <div class="mode-pills">
+                            <button class="mode-pill active" id="btnModeAuto" onclick="setActuatorMode('auto')"><i
+                                    data-lucide="bot"></i>
+                                Auto</button>
+                            <button class="mode-pill" id="btnModeManual" onclick="setActuatorMode('manual')"><i
+                                    data-lucide="settings"></i>
+                                Manual</button>
                         </div>
-
-                        <button onclick="testTelegramAlert()" style="background:#24A1DE; color:white; border:none; padding:10px 18px; border-radius:10px; cursor:pointer; font-weight:700; font-family:'Outfit',sans-serif; display:flex; align-items:center; gap:8px; box-shadow: 0 4px 12px rgba(36,161,222,0.3); transition:all 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                            <i data-lucide="send"></i> Test Telegram
-                        </button>
                     </div>
 
                     <div class="mode-hint">
@@ -616,10 +610,15 @@
         <div class="tab-content" id="simconfig-tab">
             <div class="sim-panel">
                 <div class="section-title"><i data-lucide="settings"></i> PLC Threshold Configuration</div>
-                <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:26px; line-height:1.65;">
-                    Gunakan penggeser di bawah ini untuk mengatur batas ambang (threshold) logika PLC.
-                    Klik <b>Kirim Threshold ke PLC</b> untuk meneruskan parameter ini melalui MQTT.
-                </p>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap: 15px; flex-wrap:wrap; margin-bottom: 26px;">
+                    <p style="font-size:0.88rem; color:var(--text-muted); line-height:1.65; margin:0; flex:1; min-width:300px;">
+                        Gunakan penggeser di bawah ini untuk mengatur batas ambang (threshold) logika PLC.
+                        Klik <b>Kirim Threshold ke PLC</b> untuk meneruskan parameter ini melalui MQTT.
+                    </p>
+                    <button onclick="testTelegramAlert()" style="background:#24A1DE; color:white; border:none; padding:10px 18px; border-radius:10px; cursor:pointer; font-weight:700; font-family:'Outfit',sans-serif; display:flex; align-items:center; gap:8px; box-shadow: 0 4px 12px rgba(36,161,222,0.3); transition:all 0.2s; flex-shrink:0;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        <i data-lucide="send"></i> Test Telegram
+                    </button>
+                </div>
 
                 <div class="slider-grid">
                     <style>
