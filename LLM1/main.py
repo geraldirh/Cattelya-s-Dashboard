@@ -129,6 +129,7 @@ latest_actuators = {
 
 # Buffer & Rekap per Menit
 telemetry_minute_buffer = []
+last_snapshot_time = 0.0  # Timestamp snapshot terakhir (untuk debouncing)
 
 actuator_recap_minute = {
     "exhaust_fan": 0,
@@ -139,6 +140,14 @@ actuator_recap_minute = {
 }
 
 def record_telemetry_snapshot():
+    """Catat snapshot ke buffer dengan debouncing 5 detik.
+    Satu burst MQTT (beberapa topik datang bersamaan) hanya menghasilkan 1 snapshot.
+    """
+    global last_snapshot_time
+    now = time.time()
+    if now - last_snapshot_time < 5.0:  # Debounce: abaikan jika <5 detik dari snapshot terakhir
+        return
+    last_snapshot_time = now
     telemetry_minute_buffer.append({
         "air_temperature": latest_telemetry.get("air_temperature"),
         "air_humidity": latest_telemetry.get("air_humidity"),
@@ -406,55 +415,52 @@ def start_mqtt_client():
 
 async def log_telemetry_to_supabase():
     """
-    Loop penjadwal log 1-menit yang RELIABEL.
-    Strategi: Tidur hingga detik:00 menit berikutnya SEKALI untuk sinkronisasi awal,
-    kemudian loop dengan interval TETAP 60 detik. Ini menghindari drift dan data bolong.
+    Scheduler log 1-menit berbasis WALL CLOCK (bukan elapsed time).
+    Setiap iterasi menghitung ulang sisa waktu ke batas menit berikutnya
+    langsung dari jam sistem. Ini menghilangkan drift permanen.
     """
-    # --- FASE 1: Sinkronisasi Awal ke awal menit berikutnya ---
-    now = datetime.datetime.now(datetime.timezone.utc)
-    # Hitung sisa detik menuju detik ke-00 menit berikutnya
-    secs_to_next_minute = 60 - now.second - (now.microsecond / 1_000_000.0)
-    if secs_to_next_minute < 2:  # Jika sudah sangat dekat, tunggu menit berikutnya
-        secs_to_next_minute += 60
-    print(f"[LOG SCHEDULER] Syncing to minute boundary in {secs_to_next_minute:.1f}s...")
-    await asyncio.sleep(secs_to_next_minute)
+    import datetime as dt
 
-    # --- FASE 2: Loop TETAP 60 Detik - tidak akan drift atau skip ---
     while True:
-        log_start = asyncio.get_event_loop().time()
+        # --- Hitung waktu tidur ke batas menit BERIKUTNYA dari wall clock ---
+        now_utc = dt.datetime.now(dt.timezone.utc)
+        # Menit berikutnya, di detik 00 tepat
+        next_minute_utc = (now_utc + dt.timedelta(minutes=1)).replace(second=0, microsecond=0)
+        secs_to_sleep = (next_minute_utc - now_utc).total_seconds()
+        
+        print(f"[LOG SCHEDULER] Menunggu {secs_to_sleep:.1f}s hingga {next_minute_utc.strftime('%H:%M:00Z')}...")
+        await asyncio.sleep(max(1, secs_to_sleep))
+
+        # --- Eksekusi log untuk menit yang BARU SAJA lewat ---
         try:
-            now_utc = datetime.datetime.now(datetime.timezone.utc)
-            # Stempel waktu presisi di detik 00 menit ini
-            target_iso = now_utc.replace(second=0, microsecond=0).strftime("%Y-%m-%dT%H:%M:00Z")
+            now_utc = dt.datetime.now(dt.timezone.utc)
+            # Gunakan menit yang baru saja selesai sebagai stempel waktu
+            target_minute = now_utc.replace(second=0, microsecond=0)
+            target_iso = target_minute.strftime("%Y-%m-%dT%H:%M:00Z")
 
             last_upd = latest_telemetry.get("last_update", 0)
-            has_active_stream = (time.time() - last_upd) < 300 or len(telemetry_minute_buffer) > 0
+            mqtt_active = last_upd > 0 and (time.time() - last_upd) < 300
 
-            if supabase and has_active_stream:
+            if supabase and mqtt_active:
                 telemetry_data = process_minute_telemetry()
                 actuator_data = process_minute_actuators()
 
                 telemetry_data["created_at"] = target_iso
                 actuator_data["created_at"] = target_iso
 
-                # Cek apakah stempel waktu ini sudah dimasukkan (duplikasi antar instance)
                 check_exist = supabase.table("sensor_logs").select("id").eq("created_at", target_iso).limit(1).execute()
                 if check_exist.data:
-                    print(f"[LOG SCHEDULER] Skip duplikasi: {target_iso} sudah ada di database.")
+                    print(f"[LOG SCHEDULER] Skip duplikasi: {target_iso}")
                 else:
                     supabase.table("sensor_logs").insert(telemetry_data).execute()
                     supabase.table("actuator_logs").insert(actuator_data).execute()
-                    print(f"[LOG SCHEDULER] OK - Data 1-menit berhasil disimpan: {target_iso}")
+                    print(f"[LOG SCHEDULER] OK - {target_iso}")
             else:
-                print(f"[LOG SCHEDULER] Skip: Tidak ada stream MQTT aktif di {target_iso}")
+                secs_since = int(time.time() - last_upd) if last_upd > 0 else -1
+                print(f"[LOG SCHEDULER] Skip: MQTT tidak aktif ({secs_since}s lalu)")
 
         except Exception as e:
-            print(f"[LOG SCHEDULER] ERROR saat menyimpan ke Supabase: {e}")
-
-        # --- Hitung durasi eksekusi dan tidur sisa waktu dari 60 detik ---
-        elapsed = asyncio.get_event_loop().time() - log_start
-        sleep_remaining = max(0, 60.0 - elapsed)
-        await asyncio.sleep(sleep_remaining)
+            print(f"[LOG SCHEDULER] ERROR: {e}")
 
 background_tasks_set = set()
 
