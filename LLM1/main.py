@@ -405,51 +405,56 @@ def start_mqtt_client():
         print(f"Error connecting to MQTT: {e}")
 
 async def log_telemetry_to_supabase():
-    now_utc = datetime.datetime.now(datetime.timezone.utc)
-    last_logged_minute = now_utc.strftime("%Y-%m-%d %H:%M")
-    
+    """
+    Loop penjadwal log 1-menit yang RELIABEL.
+    Strategi: Tidur hingga detik:00 menit berikutnya SEKALI untuk sinkronisasi awal,
+    kemudian loop dengan interval TETAP 60 detik. Ini menghindari drift dan data bolong.
+    """
+    # --- FASE 1: Sinkronisasi Awal ke awal menit berikutnya ---
+    now = datetime.datetime.now(datetime.timezone.utc)
+    # Hitung sisa detik menuju detik ke-00 menit berikutnya
+    secs_to_next_minute = 60 - now.second - (now.microsecond / 1_000_000.0)
+    if secs_to_next_minute < 2:  # Jika sudah sangat dekat, tunggu menit berikutnya
+        secs_to_next_minute += 60
+    print(f"[LOG SCHEDULER] Syncing to minute boundary in {secs_to_next_minute:.1f}s...")
+    await asyncio.sleep(secs_to_next_minute)
+
+    # --- FASE 2: Loop TETAP 60 Detik - tidak akan drift atau skip ---
     while True:
+        log_start = asyncio.get_event_loop().time()
         try:
-            # Kalkulasi waktu tidur menuju awal menit berikutnya (detik 00)
-            now = datetime.datetime.now()
-            sleep_duration = 60.0 - now.second - (now.microsecond / 1_000_000.0)
-            if sleep_duration <= 0.01:
-                sleep_duration = 60.0
-                
-            await asyncio.sleep(sleep_duration)
-            
             now_utc = datetime.datetime.now(datetime.timezone.utc)
-            current_minute = now_utc.strftime("%Y-%m-%d %H:%M")
-            
-            # Hanya eksekusi jika sudah benar-benar masuk menit baru
-            if current_minute != last_logged_minute:
-                last_logged_minute = current_minute
-                target_iso = now_utc.replace(second=0, microsecond=0).strftime("%Y-%m-%dT%H:%M:00Z")
-                
-                # Log jika data MQTT aktif (terakhir diterima dalam 5 menit terakhir)
-                last_upd = latest_telemetry.get("last_update", 0)
-                has_active_stream = (time.time() - last_upd) < 300 or len(telemetry_minute_buffer) > 0
-                
-                if supabase and has_active_stream:
-                    telemetry_data = process_minute_telemetry()
-                    actuator_data = process_minute_actuators()
-                    
-                    # Samakan waktu secara presisi di 00 detik
-                    telemetry_data["created_at"] = target_iso
-                    actuator_data["created_at"] = target_iso
-                    
-                    # Cek apakah stempel waktu ini sudah dicatat oleh server lain
-                    check_exist = supabase.table("sensor_logs").select("id").eq("created_at", target_iso).limit(1).execute()
-                    if check_exist.data:
-                        print(f"[LOG SYNC 00] Skip: Data for {target_iso} already inserted by another instance.")
-                    else:
-                        supabase.table("sensor_logs").insert(telemetry_data).execute()
-                        supabase.table("actuator_logs").insert(actuator_data).execute()
-                        print(f"[LOG SYNC 00] 1-Min Data recorded to Supabase at {target_iso}")
-                
+            # Stempel waktu presisi di detik 00 menit ini
+            target_iso = now_utc.replace(second=0, microsecond=0).strftime("%Y-%m-%dT%H:%M:00Z")
+
+            last_upd = latest_telemetry.get("last_update", 0)
+            has_active_stream = (time.time() - last_upd) < 300 or len(telemetry_minute_buffer) > 0
+
+            if supabase and has_active_stream:
+                telemetry_data = process_minute_telemetry()
+                actuator_data = process_minute_actuators()
+
+                telemetry_data["created_at"] = target_iso
+                actuator_data["created_at"] = target_iso
+
+                # Cek apakah stempel waktu ini sudah dimasukkan (duplikasi antar instance)
+                check_exist = supabase.table("sensor_logs").select("id").eq("created_at", target_iso).limit(1).execute()
+                if check_exist.data:
+                    print(f"[LOG SCHEDULER] Skip duplikasi: {target_iso} sudah ada di database.")
+                else:
+                    supabase.table("sensor_logs").insert(telemetry_data).execute()
+                    supabase.table("actuator_logs").insert(actuator_data).execute()
+                    print(f"[LOG SCHEDULER] OK - Data 1-menit berhasil disimpan: {target_iso}")
+            else:
+                print(f"[LOG SCHEDULER] Skip: Tidak ada stream MQTT aktif di {target_iso}")
+
         except Exception as e:
-            print(f"Error in 1-min Supabase logger: {e}")
-            await asyncio.sleep(1)
+            print(f"[LOG SCHEDULER] ERROR saat menyimpan ke Supabase: {e}")
+
+        # --- Hitung durasi eksekusi dan tidur sisa waktu dari 60 detik ---
+        elapsed = asyncio.get_event_loop().time() - log_start
+        sleep_remaining = max(0, 60.0 - elapsed)
+        await asyncio.sleep(sleep_remaining)
 
 background_tasks_set = set()
 
