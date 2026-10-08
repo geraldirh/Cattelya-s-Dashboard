@@ -96,6 +96,37 @@ if SUPABASE_URL and SUPABASE_KEY:
     except Exception as e:
         print(f"Error initializing Supabase: {e}")
 
+# Setup Telegram Alert
+last_tds_alert_time = 0.0
+
+def send_telegram_alert(message: str):
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    if not bot_token or not chat_id:
+        return
+    import urllib.request
+    import urllib.parse
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    data = urllib.parse.urlencode({'chat_id': chat_id, 'text': message}).encode('utf-8')
+    try:
+        req = urllib.request.Request(url, data=data)
+        with urllib.request.urlopen(req, timeout=5) as response:
+            pass
+    except Exception as e:
+        print(f"Gagal mengirim Telegram alert: {e}")
+
+def check_tds_alert(tds_value):
+    global last_tds_alert_time
+    try:
+        if float(tds_value) <= 18:
+            now = time.time()
+            # Batasi notifikasi maksimal 1 kali setiap 2 jam (7200 detik)
+            if now - last_tds_alert_time > 7200:
+                send_telegram_alert(f"⚠️ PERINGATAN GREENHOUSE!\nNilai TDS saat ini {tds_value} ppm. Kemungkinan air nutrisi di toren SUDAH HABIS. Segera lakukan pengisian ulang!")
+                last_tds_alert_time = now
+    except:
+        pass
+
 import paho.mqtt.client as mqtt
 import threading
 
@@ -279,12 +310,16 @@ def on_mqtt_message(client, userdata, msg):
             if "kelembapan" in payload: latest_telemetry["air_humidity"] = float(payload["kelembapan"])
             if "lux" in payload: latest_telemetry["lux"] = float(payload["lux"])
             elif "solar" in payload: latest_telemetry["lux"] = float(payload["solar"])
-            if "tds" in payload: latest_telemetry["tds"] = round(float(payload["tds"]) / 10.0, 1)
+            if "tds" in payload: 
+                latest_telemetry["tds"] = round(float(payload["tds"]) / 10.0, 1)
+                check_tds_alert(latest_telemetry["tds"])
             if "rssi" in payload: latest_telemetry["rssi"] = int(payload["rssi"])
             record_telemetry_snapshot()
             
         elif topic == TOPIC_TDS:
-            if "TDS" in payload: latest_telemetry["tds"] = round(float(payload["TDS"]) / 10.0, 1)
+            if "TDS" in payload: 
+                latest_telemetry["tds"] = round(float(payload["TDS"]) / 10.0, 1)
+                check_tds_alert(latest_telemetry["tds"])
             record_telemetry_snapshot()
             
         elif topic == TOPIC_PYRA:
