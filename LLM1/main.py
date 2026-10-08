@@ -421,23 +421,26 @@ async def log_telemetry_to_supabase():
     """
     import datetime as dt
 
+    # Tentukan target menit pertama (awal menit berikutnya)
+    now_utc = dt.datetime.now(dt.timezone.utc)
+    target_minute_utc = (now_utc + dt.timedelta(minutes=1)).replace(second=0, microsecond=0)
+
     while True:
-        # --- Hitung waktu tidur ke batas menit BERIKUTNYA dari wall clock ---
         now_utc = dt.datetime.now(dt.timezone.utc)
-        # Menit berikutnya, di detik 00 tepat
-        next_minute_utc = (now_utc + dt.timedelta(minutes=1)).replace(second=0, microsecond=0)
-        secs_to_sleep = (next_minute_utc - now_utc).total_seconds()
+        secs_to_sleep = (target_minute_utc - now_utc).total_seconds()
         
-        print(f"[LOG SCHEDULER] Menunggu {secs_to_sleep:.1f}s hingga {next_minute_utc.strftime('%H:%M:00Z')}...")
-        await asyncio.sleep(max(1, secs_to_sleep))
+        if secs_to_sleep > 0:
+            print(f"[LOG SCHEDULER] Menunggu {secs_to_sleep:.1f}s hingga {target_minute_utc.strftime('%H:%M:00Z')}...")
+            await asyncio.sleep(secs_to_sleep)
 
-        # --- Eksekusi log untuk menit yang BARU SAJA lewat ---
+        # Target ISO persis menggunakan jadwal, sehingga tidak peduli bangun sepersekian detik lebih awal/lambat
+        target_iso = target_minute_utc.strftime("%Y-%m-%dT%H:%M:00Z")
+
+        # Majukan jadwal ke menit berikutnya (TEPAT 60 detik)
+        target_minute_utc += dt.timedelta(minutes=1)
+
+        # --- Eksekusi log ---
         try:
-            now_utc = dt.datetime.now(dt.timezone.utc)
-            # Gunakan menit yang baru saja selesai sebagai stempel waktu
-            target_minute = now_utc.replace(second=0, microsecond=0)
-            target_iso = target_minute.strftime("%Y-%m-%dT%H:%M:00Z")
-
             last_upd = latest_telemetry.get("last_update", 0)
             mqtt_active = last_upd > 0 and (time.time() - last_upd) < 300
 
