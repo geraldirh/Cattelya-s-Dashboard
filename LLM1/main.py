@@ -85,6 +85,15 @@ async def set_log_interval(req: LogIntervalRequest):
     LOGGING_INTERVAL_SECONDS = req.interval
     return {"status": "success", "interval": LOGGING_INTERVAL_SECONDS}
 
+@app.post("/test-telegram")
+async def test_telegram_endpoint():
+    try:
+        tds = latest_telemetry.get("tds", 0)
+        send_telegram_alert(f"🧪 [TEST KONEKSI]\nNotifikasi Telegram OrchidCare berfungsi dengan baik!\nNilai TDS saat ini: {tds} ppm.")
+        return {"status": "success", "message": "Pesan test terkirim"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 # Setup Supabase
 from supabase import create_client, Client
 SUPABASE_URL = os.getenv("SUPABASE_URL")

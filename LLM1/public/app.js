@@ -1270,3 +1270,24 @@ function toggleDarkMode() {
 if (localStorage.getItem('orchid_dark_mode') === 'true') {
     applyDarkMode(true);
 }
+
+ a s y n c   f u n c t i o n   t e s t T e l e g r a m A l e r t ( )   { 
+         S w a l . f i r e ( { 
+                 t i t l e :   ' M e n g i r i m   T e s t . . . ' , 
+                 t e x t :   ' M e n g h u b u n g i   s e r v e r   T e l e g r a m . . . ' , 
+                 a l l o w O u t s i d e C l i c k :   f a l s e , 
+                 d i d O p e n :   ( )   = >   {   S w a l . s h o w L o a d i n g ( ) ;   } 
+         } ) ; 
+         t r y   { 
+                 c o n s t   r e s   =   a w a i t   f e t c h ( ' / t e s t - t e l e g r a m ' ,   {   m e t h o d :   ' P O S T '   } ) ; 
+                 c o n s t   d a t a   =   a w a i t   r e s . j s o n ( ) ; 
+                 i f   ( d a t a . s t a t u s   = = =   ' s u c c e s s ' )   { 
+                         S w a l . f i r e ( ' B e r h a s i l ! ' ,   d a t a . m e s s a g e ,   ' s u c c e s s ' ) ; 
+                 }   e l s e   { 
+                         S w a l . f i r e ( ' E r r o r ' ,   d a t a . m e s s a g e ,   ' e r r o r ' ) ; 
+                 } 
+         }   c a t c h   ( e )   { 
+                 S w a l . f i r e ( ' E r r o r ' ,   ' G a g a l   m e n g h u b u n g i   s e r v e r . ' ,   ' e r r o r ' ) ; 
+         } 
+ }  
+ 
