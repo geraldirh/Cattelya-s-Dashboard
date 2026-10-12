@@ -1004,32 +1004,116 @@ def set_greenhouse_thresholds(
     except Exception as e:
         return f"Gagal mengatur threshold karena error: {str(e)}"
 
-def query_database_stats(hours: int) -> str:
-    """Mengambil dan menghitung rata-rata parameter sensor (suhu, kelembapan, dll) serta menghitung frekuensi aktuator (kipas, pompa) menyala dalam rentang waktu jam terakhir dari database.
-    Panggil fungsi ini jika pengguna bertanya tentang nilai rata-rata, statistik, riwayat, atau berapa kali aktuator menyala dalam beberapa rentang jam/waktu terakhir.
+def query_database_stats(
+    hours: Optional[int] = None,
+    target_date: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+) -> str:
+    """Mengambil dan menghitung statistik sensor (suhu, kelembapan, lux, TDS) serta riwayat dan durasi aktif aktuator (kipas exhaust, pompa air, pompa pupuk, mist) dari database Supabase.
+    
+    Argumen:
+    - hours: Rentang jam terakhir dari sekarang (misal 24 untuk 1 hari terakhir, 48 untuk 2 hari terakhir). Gunakan jika pengguna bertanya tentang X jam terakhir atau tidak menyebutkan tanggal spesifik.
+    - target_date: Tanggal spesifik dalam format YYYY-MM-DD (contoh: '2026-10-07' untuk hari Rabu tanggal 7 Oktober 2026). Gunakan jika pengguna menanyakan hari/tanggal tertentu (seperti 'hari ini', 'kemarin', 'rabu lalu', 'tanggal 7').
+    - start_date: Tanggal awal (YYYY-MM-DD) jika pengguna menanyakan rentang tanggal.
+    - end_date: Tanggal akhir (YYYY-MM-DD) jika pengguna menanyakan rentang tanggal.
     """
     global supabase
     if not supabase:
         return "Gagal: Database Supabase tidak terhubung."
     try:
-        limit_hours = max(1, min(hours, 168)) # Maks 7 hari
-        time_threshold = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=limit_hours)).isoformat().replace("+00:00", "Z")
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        now_wib = now_utc + datetime.timedelta(hours=7)
         
-        sensor_res = supabase.table("sensor_logs").select("*").gte("created_at", time_threshold).execute()
-        act_res = supabase.table("actuator_logs").select("*").gte("created_at", time_threshold).execute()
+        periode_label = ""
         
-        if not sensor_res.data:
-            return f"Tidak ada data log sensor dalam {limit_hours} jam terakhir."
+        if target_date:
+            target_clean = target_date.strip().lower()
+            if target_clean in ["hari_ini", "today", "sekarang"]:
+                dt_target = now_wib.date()
+            elif target_clean in ["kemarin", "yesterday"]:
+                dt_target = (now_wib - datetime.timedelta(days=1)).date()
+            else:
+                try:
+                    dt_target = datetime.datetime.strptime(target_clean, "%Y-%m-%d").date()
+                except ValueError:
+                    return f"Format tanggal target_date '{target_date}' salah. Gunakan format YYYY-MM-DD (contoh: 2026-10-07)."
+            
+            # Rentang WIB (00:00:00 WIB s/d 23:59:59 WIB) dikonversi ke UTC (-7 jam)
+            start_dt_wib = datetime.datetime.combine(dt_target, datetime.time.min, tzinfo=datetime.timezone(datetime.timedelta(hours=7)))
+            end_dt_wib = datetime.datetime.combine(dt_target, datetime.time.max, tzinfo=datetime.timezone(datetime.timedelta(hours=7)))
+            start_iso = start_dt_wib.astimezone(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            end_iso = end_dt_wib.astimezone(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            periode_label = f"Tanggal {dt_target.strftime('%d %B %Y')} (WIB)"
+            
+        elif start_date:
+            try:
+                dt_s = datetime.datetime.strptime(start_date.strip(), "%Y-%m-%d").date()
+                dt_e = datetime.datetime.strptime(end_date.strip(), "%Y-%m-%d").date() if end_date else dt_s
+            except ValueError:
+                return "Format start_date/end_date salah. Gunakan YYYY-MM-DD."
+            start_dt_wib = datetime.datetime.combine(dt_s, datetime.time.min, tzinfo=datetime.timezone(datetime.timedelta(hours=7)))
+            end_dt_wib = datetime.datetime.combine(dt_e, datetime.time.max, tzinfo=datetime.timezone(datetime.timedelta(hours=7)))
+            start_iso = start_dt_wib.astimezone(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            end_iso = end_dt_wib.astimezone(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            periode_label = f"Periode {dt_s.strftime('%d %b %Y')} s/d {dt_e.strftime('%d %b %Y')}"
+            
+        else:
+            limit_hours = max(1, min(hours if hours is not None else 24, 168))
+            start_iso = (now_utc - datetime.timedelta(hours=limit_hours)).isoformat().replace("+00:00", "Z")
+            end_iso = now_utc.isoformat().replace("+00:00", "Z")
+            periode_label = f"{limit_hours} Jam Terakhir"
+
+        # Paginasi ambil data actuator_logs (maks 10.000 baris = ~7 hari per-menit)
+        act_data = []
+        offset = 0
+        page_size = 1000
+        max_limit = 10000
         
-        data = sensor_res.data
-        count = len(data)
-        avg_temp = sum((d.get("air_temperature") or 0) for d in data) / count
-        avg_hum = sum((d.get("air_humidity") or 0) for d in data) / count
-        avg_lux = sum((d.get("lux") or 0) for d in data) / count
-        avg_tds = sum((d.get("tds") or 0) for d in data) / count
+        while offset < max_limit:
+            query = supabase.table("actuator_logs") \
+                .select("created_at, exhaust_fan, penyiraman_air, penyiraman_pupuk, mist_ruangan, mode") \
+                .gte("created_at", start_iso) \
+                .lte("created_at", end_iso) \
+                .order("created_at", desc=False) \
+                .range(offset, offset + page_size - 1)
+            
+            res = query.execute()
+            rows = res.data or []
+            act_data.extend(rows)
+            if len(rows) < page_size:
+                break
+            offset += page_size
+
+        # Paginasi ambil data sensor_logs (suhu, kelembapan, lux, tds)
+        sensor_data = []
+        offset = 0
+        while offset < max_limit:
+            s_query = supabase.table("sensor_logs") \
+                .select("air_temperature, air_humidity, lux, tds") \
+                .gte("created_at", start_iso) \
+                .lte("created_at", end_iso) \
+                .range(offset, offset + page_size - 1)
+            s_res = s_query.execute()
+            s_rows = s_res.data or []
+            sensor_data.extend(s_rows)
+            if len(s_rows) < page_size:
+                break
+            offset += page_size
+
+        act_count = len(act_data)
+        sensor_count = len(sensor_data)
         
-        act_data = sorted(act_res.data, key=lambda x: x.get("created_at", ""))
-        
+        if act_count == 0 and sensor_count == 0:
+            return f"Tidak ada data log yang tercatat di database untuk {periode_label}."
+
+        # Rata-rata sensor
+        avg_temp = (sum((d.get("air_temperature") or 0) for d in sensor_data) / sensor_count) if sensor_count else 0
+        avg_hum = (sum((d.get("air_humidity") or 0) for d in sensor_data) / sensor_count) if sensor_count else 0
+        avg_lux = (sum((d.get("lux") or 0) for d in sensor_data) / sensor_count) if sensor_count else 0
+        avg_tds = (sum((d.get("tds") or 0) for d in sensor_data) / sensor_count) if sensor_count else 0
+
+        # Analisis streak dan durasi aktif tiap aktuator
         def get_streak_info(device_key, display_name):
             max_streak = 0
             curr_streak = 0
@@ -1038,7 +1122,9 @@ def query_database_stats(hours: int) -> str:
             total_on = 0
             
             for row in act_data:
-                if row.get(device_key) == 1:
+                val = row.get(device_key)
+                is_on = val in [1, True, "1", "true"]
+                if is_on:
                     if curr_streak == 0:
                         curr_start = row.get("created_at", "")
                     curr_streak += 1
@@ -1053,44 +1139,46 @@ def query_database_stats(hours: int) -> str:
                 max_streak = curr_streak
                 best_start = curr_start
                 
-            if max_streak == 0:
+            if total_on == 0:
                 return f"  * {display_name}: 0 menit (Tidak pernah menyala)", 0
             
-            # Ubah waktu UTC ke WIB untuk output string
             try:
                 dt_utc = datetime.datetime.fromisoformat(best_start.replace("Z", "+00:00"))
                 dt_wib = dt_utc + datetime.timedelta(hours=7)
                 str_start = dt_wib.strftime("%A, %H:%M WIB")
-                return f"  * {display_name}: {total_on} menit (Menyala tanpa henti terlama {max_streak} menit pada {str_start})", total_on
-            except:
-                return f"  * {display_name}: {total_on} menit (Menyala tanpa henti terlama {max_streak} menit)", total_on
+                streak_text = f" (Durasi menyala berurutan terlama: {max_streak} menit dimulai {str_start})" if max_streak > 1 else ""
+                return f"  * {display_name}: Total {total_on} menit{streak_text}", total_on
+            except Exception:
+                return f"  * {display_name}: Total {total_on} menit", total_on
 
         fan_str, _ = get_streak_info("exhaust_fan", "Kipas Exhaust")
-        air_str, air_total = get_streak_info("penyiraman_air", "Pompa Air")
-        pupuk_str, pupuk_total = get_streak_info("penyiraman_pupuk", "Pompa Pupuk")
+        air_str, air_total = get_streak_info("penyiraman_air", "Pompa Air (Penyiraman)")
+        pupuk_str, pupuk_total = get_streak_info("penyiraman_pupuk", "Pompa Pupuk (Nutrisi)")
         mist_str, mist_total = get_streak_info("mist_ruangan", "Mist Ruangan")
-        
-        # Kalkulasi konsumsi air dan pupuk (50 ml per 45 detik per pot x 60 pot)
+
+        # Kalkulasi konsumsi air dan pupuk (50 ml per 45 detik per pot x 60 pot = 4 Liter/menit)
         ml_per_minute_pompa = (50 / 45) * 60 * 60
-        air_volume = air_total * ml_per_minute_pompa / 1000  # dalam Liter
-        pupuk_volume = pupuk_total * ml_per_minute_pompa / 1000 # dalam Liter
-        
-        # Kalkulasi konsumsi mist (100 ml per menit)
-        mist_volume = mist_total * 100 / 1000 # dalam Liter
-        
-        return (f"=== Laporan {limit_hours} Jam Terakhir ({count} rekaman) ===\n"
-                f"- Rata-rata Suhu: {avg_temp:.1f}°C\n"
-                f"- Rata-rata Kelembapan: {avg_hum:.1f}%\n"
-                f"- Rata-rata Cahaya: {avg_lux:.0f} Lux\n"
-                f"- Rata-rata TDS: {avg_tds:.0f} ppm\n"
-                f"- Estimasi Konsumsi Air Murni: {air_volume:.2f} Liter\n"
-                f"- Estimasi Konsumsi Air Nutrisi/Pupuk: {pupuk_volume:.2f} Liter\n"
-                f"- Estimasi Konsumsi Air Mist: {mist_volume:.2f} Liter\n"
-                f"- Frekuensi & Rekor Aktuator:\n"
-                f"{fan_str}\n"
-                f"{air_str}\n"
-                f"{pupuk_str}\n"
-                f"{mist_str}")
+        air_volume = air_total * ml_per_minute_pompa / 1000  # Liter
+        pupuk_volume = pupuk_total * ml_per_minute_pompa / 1000 # Liter
+        mist_volume = mist_total * 100 / 1000 # Liter
+
+        res = [
+            f"=== Laporan Database: {periode_label} ===",
+            f"Total Sampel Log: {act_count} menit tercatat",
+            f"- Rata-rata Suhu Udara: {avg_temp:.1f}°C",
+            f"- Rata-rata Kelembapan: {avg_hum:.1f}%",
+            f"- Rata-rata Intensitas Cahaya: {avg_lux:.0f} Lux",
+            f"- Rata-rata TDS: {avg_tds:.0f} ppm",
+            f"- Estimasi Konsumsi Air Murni: {air_volume:.1f} Liter",
+            f"- Estimasi Konsumsi Air Nutrisi/Pupuk: {pupuk_volume:.1f} Liter",
+            f"- Estimasi Konsumsi Air Mist: {mist_volume:.1f} Liter",
+            "- Riwayat & Durasi Operasional Aktuator:",
+            fan_str,
+            air_str,
+            pupuk_str,
+            mist_str
+        ]
+        return "\n".join(res)
     except Exception as e:
         return f"Terjadi kesalahan saat membaca database: {e}"
 
@@ -1143,15 +1231,20 @@ async def chat_orchid(request: ChatRequest):
         live_telemetry_str = json.dumps(latest_telemetry)
         live_actuator_str = json.dumps(latest_actuators)
         
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        now_wib = now_utc + datetime.timedelta(hours=7)
+        wib_str = now_wib.strftime("%A, %d %B %Y %H:%M WIB")
+
         system_instruction = (
             "Anda adalah Dokter Anggrek AI, pakar botani spesialis tanaman anggrek terintegrasi dengan sistem IoT Greenhouse.\n\n"
+            f"WAKTU SEKARANG (REAL-TIME): {wib_str}\n"
             f"KONDISI GREENHOUSE SAAT INI (REAL-TIME):\n- Data Sensor: {live_telemetry_str}\n- Status Aktuator: {live_actuator_str}\n\n"
             "Tugas Anda:\n"
             "1. Menjawab pertanyaan pengguna tentang anggrek (perawatan, penyakit, hama, pemupukan, dll).\n"
-            "2. Anda BOLEH membaca dan menganalisis KONDISI GREENHOUSE SAAT INI di atas jika pengguna bertanya tentang keadaan greenhouse (contoh: 'Berapa suhu sekarang?', 'Apakah GH aman?').\n"
+            "2. Anda BOLEH membaca dan menganalisis KONDISI GREENHOUSE SAAT INI di atas jika pengguna bertanya tentang keadaan greenhouse saat ini (contoh: 'Berapa suhu sekarang?', 'Apakah GH aman?', 'Apakah kipas sekarang menyala?').\n"
             "3. Jika Anda menilai kondisinya tidak wajar (misal suhu >35C atau <20C, kelembapan terlalu rendah), sarankan solusi atau perubahan batas suhu.\n"
             "4. Jika pengguna meminta Anda untuk menyetel, mengubah, atau menerapkan parameter (misalnya 'atur parameter ke suhu 28', 'bantu setel parameter yang ideal'), Anda memiliki ALAT (Function Calling) bernama `set_greenhouse_thresholds` untuk mengubahnya secara langsung! Eksekusi alat tersebut dengan angka yang tepat untuk Suhu Siang, Suhu Malam, Hum low, TDS, dll sesuai standar anggrek (seperti Phalaenopsis atau Dendrobium) atau sesuai angka permintaan pengguna.\n"
-            "5. Jika pengguna menanyakan riwayat/statistik, rekor menyala terlama, atau ESTIMASI KONSUMSI AIR & PUPUK (contoh: 'berapa liter air yang dipakai hari ini?'), JANGAN MENEBAK, gunakan alat `query_database_stats` untuk menghitung datanya langsung dari database.\n"
+            "5. Jika pengguna menanyakan riwayat/statistik aktuator (kipas exhaust, pompa air, pompa nutrisi, mist), rekor menyala, atau ESTIMASI KONSUMSI AIR & PUPUK (contoh: 'ada riwayat pompa air hari rabu 7 oktober', 'berapa jam kipas menyala hari ini', 'konsumsi air kemarin'): JANGAN MENEBAK atau menolak! Selalu gunakan alat `query_database_stats` dengan argumen `target_date` (misal '2026-10-07'), `hours`, atau `start_date` yang tepat sesuai tanggal yang dimaksud pengguna.\n"
             "6. Jika pengguna menanyakan prakiraan cuaca atau Anda butuh data cuaca untuk merencanakan perawatan hari esok, gunakan alat `get_weather_forecast`.\n\n"
             "PENTING: Anda hanya boleh membahas hal seputar anggrek dan kendali Greenhouse. Tolak pertanyaan di luar itu dengan sopan."
         )
