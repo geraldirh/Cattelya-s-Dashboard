@@ -848,6 +848,177 @@
                 // Initial render
                 renderMasterChart();
 
+                // --- ACTUATOR TIMELINE (RANGEBAR / GANTT) RENDERING LOGIC ---
+                const renderActuatorTimeline = () => {
+                    const elAct = document.querySelector('#chart-actuators');
+                    const badgesContainer = document.getElementById('actuatorSummaryBadges');
+                    if (!elAct) return;
+
+                    const devices = [
+                        { key: 'exhaust_fan', label: 'Kipas Exhaust', color: '#10b981' },
+                        { key: 'penyiraman_air', label: 'Pompa Air', color: '#0ea5e9' },
+                        { key: 'penyiraman_pupuk', label: 'Pompa Pupuk', color: '#8b5cf6' },
+                        { key: 'mist_ruangan', label: 'Mist Ruangan', color: '#f59e0b' }
+                    ];
+
+                    const timelineSeries = [];
+                    const activeMinutesCount = {
+                        exhaust_fan: 0,
+                        penyiraman_air: 0,
+                        penyiraman_pupuk: 0,
+                        mist_ruangan: 0
+                    };
+
+                    devices.forEach(dev => {
+                        const intervals = [];
+                        let inInterval = false;
+                        let startMs = 0;
+                        let prevMs = 0;
+
+                        chartLogs.forEach(log => {
+                            const d = parseTimestamp(log.timestamp);
+                            if (!d) return;
+                            const tsMs = d.getTime();
+                            const val = log.actions ? log.actions[dev.key] : 0;
+                            const isOn = val === 1 || val === true || val === '1';
+
+                            if (isOn) {
+                                activeMinutesCount[dev.key]++;
+                                if (!inInterval) {
+                                    inInterval = true;
+                                    startMs = tsMs;
+                                }
+                                prevMs = tsMs;
+                            } else {
+                                if (inInterval) {
+                                    intervals.push({
+                                        x: dev.label,
+                                        y: [startMs, prevMs + 60000]
+                                    });
+                                    inInterval = false;
+                                }
+                            }
+                        });
+
+                        if (inInterval) {
+                            intervals.push({
+                                x: dev.label,
+                                y: [startMs, prevMs + 60000]
+                            });
+                        }
+
+                        timelineSeries.push({
+                            name: dev.label,
+                            data: intervals
+                        });
+                    });
+
+                    // Render dynamic summary badges
+                    if (badgesContainer) {
+                        badgesContainer.innerHTML = devices.map(dev => {
+                            const mins = activeMinutesCount[dev.key];
+                            return `<span style="padding: 3px 8px; border-radius: 6px; background: rgba(241,245,249,0.9); border: 1px solid #e2e8f0; color: #334155;">
+                                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${dev.color}; margin-right:5px;"></span>
+                                <b>${dev.label}:</b> ${mins} mnt
+                            </span>`;
+                        }).join('');
+                    }
+
+                    const validTimestamps = chartLogs.map(l => {
+                        const d = parseTimestamp(l.timestamp);
+                        return d ? d.getTime() : null;
+                    }).filter(t => t !== null);
+
+                    const minX = validTimestamps.length > 0 ? Math.min(...validTimestamps) : undefined;
+                    const maxX = validTimestamps.length > 0 ? Math.max(...validTimestamps) + 60000 : undefined;
+
+                    const actOpt = {
+                        chart: {
+                            height: 250,
+                            type: 'rangeBar',
+                            fontFamily: 'Inter, sans-serif',
+                            toolbar: { show: true, tools: { zoom: true, pan: true, download: false } }
+                        },
+                        plotOptions: {
+                            bar: {
+                                horizontal: true,
+                                barHeight: '55%',
+                                rangeBarGroupRows: true
+                            }
+                        },
+                        colors: devices.map(d => d.color),
+                        series: timelineSeries,
+                        xaxis: {
+                            type: 'datetime',
+                            min: minX,
+                            max: maxX,
+                            labels: {
+                                datetimeUTC: false,
+                                style: { colors: '#64748b', fontSize: '11px' }
+                            },
+                            axisBorder: { show: true, color: '#e2e8f0' },
+                            title: { text: 'Waktu Aktivitas (WIB)', style: { color: '#64748b', fontWeight: 500 } }
+                        },
+                        yaxis: {
+                            labels: {
+                                style: { colors: '#1e293b', fontWeight: 600, fontSize: '12px' }
+                            }
+                        },
+                        grid: {
+                            show: true,
+                            borderColor: '#e2e8f0',
+                            strokeDashArray: 4,
+                            xaxis: { lines: { show: true } }
+                        },
+                        tooltip: {
+                            theme: 'light',
+                            custom: function(opts) {
+                                const from = new Date(opts.y1);
+                                const to = new Date(opts.y2);
+                                const diffMin = Math.round((opts.y2 - opts.y1) / 60000);
+                                const formatTime = d => {
+                                    const hh = String(d.getHours()).padStart(2, '0');
+                                    const mi = String(d.getMinutes()).padStart(2, '0');
+                                    const dd = String(d.getDate()).padStart(2, '0');
+                                    const mm = String(d.getMonth() + 1).padStart(2, '0');
+                                    return `${dd}/${mm} ${hh}:${mi} WIB`;
+                                };
+                                return `<div style="padding: 10px 14px; font-family: Inter, sans-serif; font-size: 12px; line-height: 1.5; color: #1e293b; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-radius: 8px; background: #fff;">
+                                    <div style="font-weight: 700; margin-bottom: 4px; color: ${opts.w.globals.colors[opts.seriesIndex]};">
+                                        [ON] ${opts.w.globals.seriesNames[opts.seriesIndex]}
+                                    </div>
+                                    <div><b>Mulai:</b> ${formatTime(from)}</div>
+                                    <div><b>Selesai:</b> ${formatTime(to)}</div>
+                                    <div><b>Durasi:</b> ${diffMin} menit</div>
+                                </div>`;
+                            }
+                        },
+                        legend: {
+                            show: true,
+                            position: 'top',
+                            horizontalAlign: 'right',
+                            markers: { radius: 12 }
+                        },
+                        noData: {
+                            text: 'Tidak ada aktivitas aktuator aktif pada rentang waktu ini (Semua OFF)',
+                            align: 'center',
+                            verticalAlign: 'middle',
+                            style: { color: '#94a3b8', fontSize: '13px' }
+                        }
+                    };
+
+                    if (elAct._chart && silent) {
+                        elAct._chart.updateOptions(actOpt, false, false);
+                    } else {
+                        if (elAct._chart) elAct._chart.destroy();
+                        elAct._chart = new ApexCharts(elAct, actOpt);
+                        elAct._chart.render();
+                    }
+                };
+
+                // Initial render actuator timeline
+                renderActuatorTimeline();
+
             } catch (e) { console.error('Logger error:', e); }
         }
 
