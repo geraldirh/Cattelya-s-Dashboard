@@ -774,12 +774,12 @@
                         yaxisOptions = [{ title: { text: 'Kelembapan (%)', style: { color: '#0ea5e9' } }, labels: { style: { colors: '#0ea5e9' }, formatter: v => v.toFixed(1) } }];
                         colors = ['#0ea5e9']; strokeWidth = [2];
                     } else if (selection === 'soilPh') {
-                        series = [{ name: 'pH Tanah', type: 'area', data: soilPh }];
+                        series = [{ name: 'pH', type: 'area', data: soilPh }];
                         yaxisOptions = [{ title: { text: 'pH', style: { color: '#ec4899' } }, labels: { style: { colors: '#ec4899' }, formatter: v => v.toFixed(2) } }];
                         colors = ['#ec4899']; strokeWidth = [2];
                     } else if (selection === 'soilEc') {
-                        series = [{ name: 'Conductivity (PPM)', type: 'area', data: soilEc }];
-                        yaxisOptions = [{ title: { text: 'Conductivity (PPM)', style: { color: '#14b8a6' } }, labels: { style: { colors: '#14b8a6' }, formatter: v => v.toFixed(0) } }];
+                        series = [{ name: 'Conductivity (µS/cm)', type: 'area', data: soilEc }];
+                        yaxisOptions = [{ title: { text: 'Conductivity (µS/cm)', style: { color: '#14b8a6' } }, labels: { style: { colors: '#14b8a6' }, formatter: v => v.toFixed(0) } }];
                         colors = ['#14b8a6']; strokeWidth = [2];
                     } 
                     // Comparison Configurations
@@ -806,11 +806,11 @@
                     } else if (selection === 'compPhEc') {
                         series = [
                             { name: 'pH', type: 'area', data: soilPh },
-                            { name: 'Conductivity (PPM)', type: 'area', data: soilEc }
+                            { name: 'Conductivity (µS/cm)', type: 'area', data: soilEc }
                         ];
                         yaxisOptions = [
                             { seriesName: 'pH', title: { text: 'pH', style: { color: '#ec4899' } }, labels: { style: { colors: '#ec4899' }, formatter: v => v.toFixed(2) } },
-                            { seriesName: 'Conductivity (PPM)', opposite: true, title: { text: 'Conductivity (PPM)', style: { color: '#14b8a6' } }, labels: { style: { colors: '#14b8a6' }, formatter: v => v.toFixed(0) } }
+                            { seriesName: 'Conductivity (µS/cm)', opposite: true, title: { text: 'Conductivity (µS/cm)', style: { color: '#14b8a6' } }, labels: { style: { colors: '#14b8a6' }, formatter: v => v.toFixed(0) } }
                         ];
                         colors = ['#ec4899', '#14b8a6']; strokeWidth = [2, 2];
                     }
