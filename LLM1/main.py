@@ -215,15 +215,15 @@ SENSOR_VALID_RANGES = {
     "tds":             {"min": 0.0,  "max": 3000.0, "max_step": 200.0, "allow_zero": True},
     "m1_suhu":         {"min": 10.0, "max": 50.0, "max_step": 6.0, "allow_zero": False},
     "m1_humid":        {"min": 1.0,  "max": 100.0, "max_step": 25.0, "allow_zero": False},
-    "m1_ec":           {"min": 10.0, "max": 3000.0, "max_step": 300.0, "allow_zero": False},
+    "m1_ec":           {"min": 0.01, "max": 3.0, "max_step": 0.3, "allow_zero": False},
     "m1_ph":           {"min": 3.0,  "max": 9.5,   "max_step": 2.0, "allow_zero": False},
     "m2_suhu":         {"min": 10.0, "max": 50.0, "max_step": 6.0, "allow_zero": False},
     "m2_humid":        {"min": 1.0,  "max": 100.0, "max_step": 25.0, "allow_zero": False},
-    "m2_ec":           {"min": 10.0, "max": 3000.0, "max_step": 300.0, "allow_zero": False},
+    "m2_ec":           {"min": 0.01, "max": 3.0, "max_step": 0.3, "allow_zero": False},
     "m2_ph":           {"min": 3.0,  "max": 9.5,   "max_step": 2.0, "allow_zero": False},
     "m3_suhu":         {"min": 10.0, "max": 50.0, "max_step": 6.0, "allow_zero": False},
     "m3_humid":        {"min": 1.0,  "max": 100.0, "max_step": 25.0, "allow_zero": False},
-    "m3_ec":           {"min": 10.0, "max": 3000.0, "max_step": 300.0, "allow_zero": False},
+    "m3_ec":           {"min": 0.01, "max": 3.0, "max_step": 0.3, "allow_zero": False},
     "m3_ph":           {"min": 3.0,  "max": 9.5,   "max_step": 2.0, "allow_zero": False}
 }
 
@@ -317,7 +317,12 @@ def process_minute_telemetry():
 
         # 4. Fallback ke data 1 menit sebelumnya jika data saat ini 0, error, atau seluruhnya spike
         if candidate_avg is not None:
-            final_val = round(candidate_avg, 0) if k in ["lux", "m1_ec", "m2_ec", "m3_ec", "tds"] else round(candidate_avg, 1)
+            if k in ["lux", "tds"]:
+                final_val = round(candidate_avg, 0)
+            elif k in ["m1_ec", "m2_ec", "m3_ec"]:
+                final_val = round(candidate_avg, 3)
+            else:
+                final_val = round(candidate_avg, 1)
             last_valid_telemetry[k] = final_val
             aggregated[k] = final_val
         else:
@@ -432,7 +437,7 @@ def on_mqtt_message(client, userdata, msg):
                 v = round(float(payload["m1_kelembapan"]) / 10.0, 1)
                 if is_valid_sensor_value("m1_humid", v): latest_telemetry["meja1"]["kelembapan"] = v
             if "m1_EC" in payload:
-                v = round(float(payload["m1_EC"]) * 5, 0)
+                v = round(float(payload["m1_EC"]) * 0.001, 3)
                 if is_valid_sensor_value("m1_ec", v): latest_telemetry["meja1"]["ec"] = v
             if "m1_pH" in payload:
                 v = round(float(payload["m1_pH"]) / 10.0, 1)
@@ -446,7 +451,7 @@ def on_mqtt_message(client, userdata, msg):
                 v = round(float(payload["m2_Moist"]) / 10.0, 1)
                 if is_valid_sensor_value("m2_humid", v): latest_telemetry["meja2"]["kelembapan"] = v
             if "m2_EC" in payload:
-                v = round(float(payload["m2_EC"]) * 5, 0)
+                v = round(float(payload["m2_EC"]) * 0.001, 3)
                 if is_valid_sensor_value("m2_ec", v): latest_telemetry["meja2"]["ec"] = v
             if "m2_pH" in payload:
                 v = round(float(payload["m2_pH"]) / 10.0, 1)
@@ -460,7 +465,7 @@ def on_mqtt_message(client, userdata, msg):
                 v = round(float(payload["m3_Moist"]) / 10.0, 1)
                 if is_valid_sensor_value("m3_humid", v): latest_telemetry["meja3"]["kelembapan"] = v
             if "m3_EC" in payload:
-                v = round(float(payload["m3_EC"]) * 5, 0)
+                v = round(float(payload["m3_EC"]) * 0.001, 3)
                 if is_valid_sensor_value("m3_ec", v): latest_telemetry["meja3"]["ec"] = v
             if "m3_pH" in payload:
                 v = round(float(payload["m3_pH"]) / 10.0, 1)
