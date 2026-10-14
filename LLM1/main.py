@@ -207,27 +207,54 @@ def record_telemetry_snapshot():
         "m3_ph": latest_telemetry.get("meja3", {}).get("ph")
     })
 
+# Batas toleransi wajar dan batas fisik sensor greenhouse
+SENSOR_VALID_RANGES = {
+    "air_temperature": {"min": 10.0, "max": 60.0, "max_step": 6.0, "allow_zero": False},
+    "air_humidity":    {"min": 5.0,  "max": 100.0, "max_step": 25.0, "allow_zero": False},
+    "lux":             {"min": 0.0,  "max": 120000.0, "max_step": 30000.0, "allow_zero": True},
+    "tds":             {"min": 0.0,  "max": 3000.0, "max_step": 200.0, "allow_zero": True},
+    "m1_suhu":         {"min": 10.0, "max": 50.0, "max_step": 6.0, "allow_zero": False},
+    "m1_humid":        {"min": 1.0,  "max": 100.0, "max_step": 25.0, "allow_zero": False},
+    "m1_ec":           {"min": 10.0, "max": 3000.0, "max_step": 300.0, "allow_zero": False},
+    "m1_ph":           {"min": 3.0,  "max": 9.5,   "max_step": 2.0, "allow_zero": False},
+    "m2_suhu":         {"min": 10.0, "max": 50.0, "max_step": 6.0, "allow_zero": False},
+    "m2_humid":        {"min": 1.0,  "max": 100.0, "max_step": 25.0, "allow_zero": False},
+    "m2_ec":           {"min": 10.0, "max": 3000.0, "max_step": 300.0, "allow_zero": False},
+    "m2_ph":           {"min": 3.0,  "max": 9.5,   "max_step": 2.0, "allow_zero": False},
+    "m3_suhu":         {"min": 10.0, "max": 50.0, "max_step": 6.0, "allow_zero": False},
+    "m3_humid":        {"min": 1.0,  "max": 100.0, "max_step": 25.0, "allow_zero": False},
+    "m3_ec":           {"min": 10.0, "max": 3000.0, "max_step": 300.0, "allow_zero": False},
+    "m3_ph":           {"min": 3.0,  "max": 9.5,   "max_step": 2.0, "allow_zero": False}
+}
+
+# Menyimpan nilai sensor menit sebelumnya yang terverifikasi normal sebagai fallback
+last_valid_telemetry = {}
+
+def is_valid_sensor_value(key: str, val) -> bool:
+    """Memvalidasi apakah suatu nilai sensor berada dalam rentang fisik yang realistis."""
+    if val is None:
+        return False
+    try:
+        fval = float(val)
+    except (ValueError, TypeError):
+        return False
+
+    spec = SENSOR_VALID_RANGES.get(key)
+    if not spec:
+        return True
+
+    # Jika nilai 0 tapi sensor ini tidak memperbolehkan 0 (misal pH, Suhu, Humid, EC) -> anomali / error pembacaan
+    if fval == 0 and not spec.get("allow_zero", False):
+        return False
+
+    # Cek batas absolut min & max
+    if fval < spec["min"] or fval > spec["max"]:
+        return False
+
+    return True
+
 def process_minute_telemetry():
-    global telemetry_minute_buffer
-    if not telemetry_minute_buffer:
-        return {
-            "air_temperature": latest_telemetry.get("air_temperature"),
-            "air_humidity": latest_telemetry.get("air_humidity"),
-            "lux": latest_telemetry.get("lux"),
-            "tds": latest_telemetry.get("tds"),
-            "m1_suhu": latest_telemetry.get("meja1", {}).get("suhu"),
-            "m1_humid": latest_telemetry.get("meja1", {}).get("kelembapan"),
-            "m1_ec": latest_telemetry.get("meja1", {}).get("ec"),
-            "m1_ph": latest_telemetry.get("meja1", {}).get("ph"),
-            "m2_suhu": latest_telemetry.get("meja2", {}).get("suhu"),
-            "m2_humid": latest_telemetry.get("meja2", {}).get("kelembapan"),
-            "m2_ec": latest_telemetry.get("meja2", {}).get("ec"),
-            "m2_ph": latest_telemetry.get("meja2", {}).get("ph"),
-            "m3_suhu": latest_telemetry.get("meja3", {}).get("suhu"),
-            "m3_humid": latest_telemetry.get("meja3", {}).get("kelembapan"),
-            "m3_ec": latest_telemetry.get("meja3", {}).get("ec"),
-            "m3_ph": latest_telemetry.get("meja3", {}).get("ph")
-        }
+    global telemetry_minute_buffer, last_valid_telemetry
     
     keys = [
         "air_temperature", "air_humidity", "lux", "tds",
@@ -235,17 +262,73 @@ def process_minute_telemetry():
         "m2_suhu", "m2_humid", "m2_ec", "m2_ph",
         "m3_suhu", "m3_humid", "m3_ec", "m3_ph"
     ]
+
+    # Ambil sumber data: jika buffer ada gunakan buffer, jika kosong ambil snapshot saat ini
+    raw_source = telemetry_minute_buffer if telemetry_minute_buffer else [{
+        "air_temperature": latest_telemetry.get("air_temperature"),
+        "air_humidity": latest_telemetry.get("air_humidity"),
+        "lux": latest_telemetry.get("lux"),
+        "tds": latest_telemetry.get("tds"),
+        "m1_suhu": latest_telemetry.get("meja1", {}).get("suhu"),
+        "m1_humid": latest_telemetry.get("meja1", {}).get("kelembapan"),
+        "m1_ec": latest_telemetry.get("meja1", {}).get("ec"),
+        "m1_ph": latest_telemetry.get("meja1", {}).get("ph"),
+        "m2_suhu": latest_telemetry.get("meja2", {}).get("suhu"),
+        "m2_humid": latest_telemetry.get("meja2", {}).get("kelembapan"),
+        "m2_ec": latest_telemetry.get("meja2", {}).get("ec"),
+        "m2_ph": latest_telemetry.get("meja2", {}).get("ph"),
+        "m3_suhu": latest_telemetry.get("meja3", {}).get("suhu"),
+        "m3_humid": latest_telemetry.get("meja3", {}).get("kelembapan"),
+        "m3_ec": latest_telemetry.get("meja3", {}).get("ec"),
+        "m3_ph": latest_telemetry.get("meja3", {}).get("ph")
+    }]
+
     aggregated = {}
+
     for k in keys:
-        valid_vals = [item[k] for item in telemetry_minute_buffer if item.get(k) is not None]
-        if valid_vals:
-            if k in ["lux", "m1_ec", "m2_ec", "m3_ec", "tds"]:
-                aggregated[k] = round(sum(valid_vals) / len(valid_vals), 0)
-            else:
-                aggregated[k] = round(sum(valid_vals) / len(valid_vals), 1)
+        spec = SENSOR_VALID_RANGES.get(k, {})
+        max_step = spec.get("max_step")
+        prev_valid = last_valid_telemetry.get(k)
+
+        # 1. Filter awal: buang nilai None, out-of-range, atau 0 error
+        valid_candidates = []
+        for item in raw_source:
+            v = item.get(k)
+            if is_valid_sensor_value(k, v):
+                valid_candidates.append(float(v))
+
+        # 2. Filter lonjakan drastis (Spike Filter) relatif terhadap nilai normal menit sebelumnya
+        filtered_vals = []
+        for v in valid_candidates:
+            if prev_valid is not None and max_step is not None:
+                # Jika lonjakan melampaui batas wajar per 1 menit (misal suhu naik >6C atau pH naik >2) -> anggap spike
+                if abs(v - prev_valid) > max_step:
+                    print(f"[SPIKE FILTER] Abort spike pada '{k}': {v} (baseline menit sebelumnya: {prev_valid}, max_step: {max_step})")
+                    continue
+            filtered_vals.append(v)
+
+        # 3. Hitung agregat rata-rata jika ada nilai normal
+        candidate_avg = None
+        if filtered_vals:
+            candidate_avg = sum(filtered_vals) / len(filtered_vals)
+        elif valid_candidates and prev_valid is None:
+            # Jika belum ada baseline historis sama sekali, gunakan rata-rata kandidat valid
+            candidate_avg = sum(valid_candidates) / len(valid_candidates)
+
+        # 4. Fallback ke data 1 menit sebelumnya jika data saat ini 0, error, atau seluruhnya spike
+        if candidate_avg is not None:
+            final_val = round(candidate_avg, 0) if k in ["lux", "m1_ec", "m2_ec", "m3_ec", "tds"] else round(candidate_avg, 1)
+            last_valid_telemetry[k] = final_val
+            aggregated[k] = final_val
         else:
-            aggregated[k] = None
-            
+            if prev_valid is not None:
+                print(f"[SENSOR FALLBACK] Data '{k}' 0/error/spike. Menggunakan data 1 menit sebelumnya: {prev_valid}")
+                aggregated[k] = prev_valid
+            else:
+                # Fallback terakhir jika belum pernah ada riwayat sama sekali: ambil dari latest_telemetry jika valid
+                def_val = latest_telemetry.get(k)
+                aggregated[k] = def_val
+
     telemetry_minute_buffer.clear()
     return aggregated
 
@@ -342,22 +425,46 @@ def on_mqtt_message(client, userdata, msg):
             
         elif topic == TOPIC_SOIL:
             # Parsing Data Meja 1
-            if "m1_suhu" in payload: latest_telemetry["meja1"]["suhu"] = round(float(payload["m1_suhu"]) / 10.0, 1)
-            if "m1_kelembapan" in payload: latest_telemetry["meja1"]["kelembapan"] = round(float(payload["m1_kelembapan"]) / 10.0, 1)
-            if "m1_EC" in payload: latest_telemetry["meja1"]["ec"] = round(float(payload["m1_EC"]) * 5, 0)
-            if "m1_pH" in payload: latest_telemetry["meja1"]["ph"] = round(float(payload["m1_pH"]) / 10.0, 1)
+            if "m1_suhu" in payload:
+                v = round(float(payload["m1_suhu"]) / 10.0, 1)
+                if is_valid_sensor_value("m1_suhu", v): latest_telemetry["meja1"]["suhu"] = v
+            if "m1_kelembapan" in payload:
+                v = round(float(payload["m1_kelembapan"]) / 10.0, 1)
+                if is_valid_sensor_value("m1_humid", v): latest_telemetry["meja1"]["kelembapan"] = v
+            if "m1_EC" in payload:
+                v = round(float(payload["m1_EC"]) * 5, 0)
+                if is_valid_sensor_value("m1_ec", v): latest_telemetry["meja1"]["ec"] = v
+            if "m1_pH" in payload:
+                v = round(float(payload["m1_pH"]) / 10.0, 1)
+                if is_valid_sensor_value("m1_ph", v): latest_telemetry["meja1"]["ph"] = v
             
             # Parsing Data Meja 2
-            if "m2_Suhu" in payload: latest_telemetry["meja2"]["suhu"] = round(float(payload["m2_Suhu"]) / 10.0, 1)
-            if "m2_Moist" in payload: latest_telemetry["meja2"]["kelembapan"] = round(float(payload["m2_Moist"]) / 10.0, 1)
-            if "m2_EC" in payload: latest_telemetry["meja2"]["ec"] = round(float(payload["m2_EC"]) * 5, 0)
-            if "m2_pH" in payload: latest_telemetry["meja2"]["ph"] = round(float(payload["m2_pH"]) / 10.0, 1)
+            if "m2_Suhu" in payload:
+                v = round(float(payload["m2_Suhu"]) / 10.0, 1)
+                if is_valid_sensor_value("m2_suhu", v): latest_telemetry["meja2"]["suhu"] = v
+            if "m2_Moist" in payload:
+                v = round(float(payload["m2_Moist"]) / 10.0, 1)
+                if is_valid_sensor_value("m2_humid", v): latest_telemetry["meja2"]["kelembapan"] = v
+            if "m2_EC" in payload:
+                v = round(float(payload["m2_EC"]) * 5, 0)
+                if is_valid_sensor_value("m2_ec", v): latest_telemetry["meja2"]["ec"] = v
+            if "m2_pH" in payload:
+                v = round(float(payload["m2_pH"]) / 10.0, 1)
+                if is_valid_sensor_value("m2_ph", v): latest_telemetry["meja2"]["ph"] = v
             
             # Parsing Data Meja 3
-            if "m3_Suhu" in payload: latest_telemetry["meja3"]["suhu"] = round(float(payload["m3_Suhu"]) / 10.0, 1)
-            if "m3_Moist" in payload: latest_telemetry["meja3"]["kelembapan"] = round(float(payload["m3_Moist"]) / 10.0, 1)
-            if "m3_EC" in payload: latest_telemetry["meja3"]["ec"] = round(float(payload["m3_EC"]) * 5, 0)
-            if "m3_pH" in payload: latest_telemetry["meja3"]["ph"] = round(float(payload["m3_pH"]) / 10.0, 1)
+            if "m3_Suhu" in payload:
+                v = round(float(payload["m3_Suhu"]) / 10.0, 1)
+                if is_valid_sensor_value("m3_suhu", v): latest_telemetry["meja3"]["suhu"] = v
+            if "m3_Moist" in payload:
+                v = round(float(payload["m3_Moist"]) / 10.0, 1)
+                if is_valid_sensor_value("m3_humid", v): latest_telemetry["meja3"]["kelembapan"] = v
+            if "m3_EC" in payload:
+                v = round(float(payload["m3_EC"]) * 5, 0)
+                if is_valid_sensor_value("m3_ec", v): latest_telemetry["meja3"]["ec"] = v
+            if "m3_pH" in payload:
+                v = round(float(payload["m3_pH"]) / 10.0, 1)
+                if is_valid_sensor_value("m3_ph", v): latest_telemetry["meja3"]["ph"] = v
             record_telemetry_snapshot()
             
         elif topic in [TOPIC_SP_SENSOR_PUB, TOPIC_SP_SENSOR_REC]:
