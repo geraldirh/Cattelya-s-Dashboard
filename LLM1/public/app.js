@@ -849,10 +849,15 @@
                 renderMasterChart();
 
                 // --- ACTUATOR TIMELINE (RANGEBAR / GANTT) RENDERING LOGIC ---
-                const renderActuatorTimeline = () => {
+                let cachedActuatorLogs = data.actuator_logs || [];
+
+                const renderActuatorTimeline = (overrideLogs = null) => {
                     const elAct = document.querySelector('#chart-actuators');
                     const badgesContainer = document.getElementById('actuatorSummaryBadges');
                     if (!elAct) return;
+
+                    const actLogsToUse = overrideLogs || cachedActuatorLogs;
+                    const dataSource = (actLogsToUse && actLogsToUse.length > 0) ? actLogsToUse : chartLogs;
 
                     const devices = [
                         { key: 'exhaust_fan', label: 'Kipas Exhaust', color: '#10b981' },
@@ -875,11 +880,11 @@
                         let startMs = 0;
                         let prevMs = 0;
 
-                        chartLogs.forEach(log => {
+                        dataSource.forEach(log => {
                             const d = parseTimestamp(log.timestamp);
                             if (!d) return;
                             const tsMs = d.getTime();
-                            const val = log.actions ? log.actions[dev.key] : 0;
+                            const val = (log.actions && log.actions[dev.key] !== undefined) ? log.actions[dev.key] : log[dev.key];
                             const isOn = val === 1 || val === true || val === '1';
 
                             if (isOn) {
@@ -924,7 +929,7 @@
                         }).join('');
                     }
 
-                    const validTimestamps = chartLogs.map(l => {
+                    const validTimestamps = dataSource.map(l => {
                         const d = parseTimestamp(l.timestamp);
                         return d ? d.getTime() : null;
                     }).filter(t => t !== null);
@@ -1016,8 +1021,32 @@
                     }
                 };
 
-                // Initial render actuator timeline
-                renderActuatorTimeline();
+                // Helper window function for independent actuator time range change
+                window.onActuatorTimeRangeChange = async (selectedPeriod) => {
+                    if (selectedPeriod === 'sync') {
+                        renderActuatorTimeline(cachedActuatorLogs);
+                        return;
+                    }
+                    try {
+                        const actRes = await fetch('/get-logs?period=' + selectedPeriod);
+                        const actData = await actRes.json();
+                        if (actData.actuator_logs && actData.actuator_logs.length > 0) {
+                            renderActuatorTimeline(actData.actuator_logs);
+                        } else if (actData.logs) {
+                            renderActuatorTimeline(actData.logs);
+                        }
+                    } catch (err) {
+                        console.error('Failed to fetch custom actuator range:', err);
+                    }
+                };
+
+                // Check if user previously selected independent actuator range
+                const actSel = document.getElementById('actuatorTimeRangeSelector');
+                if (actSel && actSel.value && actSel.value !== 'sync') {
+                    window.onActuatorTimeRangeChange(actSel.value);
+                } else {
+                    renderActuatorTimeline();
+                }
 
             } catch (e) { console.error('Logger error:', e); }
         }

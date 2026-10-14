@@ -876,6 +876,8 @@ async def get_logs(period: str = "1h"):
                 limit_val = 360
             elif period == "1d":
                 limit_val = 1440
+            elif period == "3d":
+                limit_val = 4320
             elif period == "1w":
                 limit_val = 10080
             elif period == "1m":
@@ -963,10 +965,31 @@ async def get_logs(period: str = "1h"):
                     seen_chart_ts.add(ts)
                     formatted_chart_logs.append(item)
 
+            # 3. Data khusus Timeline Aktuator (Raw per-menit tanpa downsampling agar durasi/interval ON-OFF 100% presisi)
+            formatted_actuator_logs = []
+            for a in reversed(act_list):
+                ts_a = a.get("created_at", "")
+                if "T" in ts_a:
+                    try:
+                        utc_dt = datetime.datetime.strptime(ts_a[:19], "%Y-%m-%dT%H:%M:%S")
+                        local_dt = utc_dt + datetime.timedelta(hours=7)
+                        ts_a = local_dt.strftime("%d-%m-%Y %H:%M:%S")
+                    except Exception:
+                        pass
+                formatted_actuator_logs.append({
+                    "timestamp": ts_a,
+                    "exhaust_fan": a.get("exhaust_fan", 0),
+                    "penyiraman_air": a.get("penyiraman_air", 0),
+                    "penyiraman_pupuk": a.get("penyiraman_pupuk", 0),
+                    "mist_ruangan": a.get("mist_ruangan", 0),
+                    "mode": a.get("mode", "auto")
+                })
+
             return {
                 "status": "success", 
                 "logs": formatted_chart_logs,
-                "table_logs": formatted_table_logs
+                "table_logs": formatted_table_logs,
+                "actuator_logs": formatted_actuator_logs
             }
         except Exception as e:
             print(f"Error fetching logs from Supabase: {e}")
