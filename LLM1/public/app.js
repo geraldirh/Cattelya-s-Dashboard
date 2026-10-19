@@ -521,17 +521,17 @@
 
                 setMetricText('vM1Suhu', vals.meja1.suhu, '°C');
                 setMetricText('vM1Humid', vals.meja1.kelembapan, '%');
-                updateGauge('cM1EC', 'vM1EC', vals.meja1.ec, 0, 2000, '');
+                updateGauge('cM1EC', 'vM1EC', vals.meja1.ec, 0, 3, '', 3);
                 updateGauge('cM1pH', 'vM1pH', vals.meja1.ph, 0, 14, '');
 
                 setMetricText('vM2Suhu', vals.meja2.suhu, '°C');
                 setMetricText('vM2Humid', vals.meja2.kelembapan, '%');
-                updateGauge('cM2EC', 'vM2EC', vals.meja2.ec, 0, 2000, '');
+                updateGauge('cM2EC', 'vM2EC', vals.meja2.ec, 0, 3, '', 3);
                 updateGauge('cM2pH', 'vM2pH', vals.meja2.ph, 0, 14, '');
 
                 setMetricText('vM3Suhu', vals.meja3.suhu, '°C');
                 setMetricText('vM3Humid', vals.meja3.kelembapan, '%');
-                updateGauge('cM3EC', 'vM3EC', vals.meja3.ec, 0, 2000, '');
+                updateGauge('cM3EC', 'vM3EC', vals.meja3.ec, 0, 3, '', 3);
                 updateGauge('cM3pH', 'vM3pH', vals.meja3.ph, 0, 14, '');
 
                 // AI summary
@@ -650,7 +650,7 @@
                 });
 
                 // Filter for sudden impulse anomalies / spikes that drop/jump and return to normal
-                const despikeFilter = (arr, minSpikeThreshold = 2.0) => {
+                const despikeFilter = (arr, minSpikeThreshold = 2.0, decimals = 2) => {
                     if (!arr || arr.length < 3) return arr;
                     const res = [...arr];
                     
@@ -666,7 +666,7 @@
                             const neighborDiff = Math.abs(prev - nxt);
                             const spikeMag = Math.min(Math.abs(dPrev), Math.abs(dNext));
                             if (spikeMag > Math.max(neighborDiff * 1.8, minSpikeThreshold)) {
-                                res[i] = Number(((prev + nxt) / 2).toFixed(2));
+                                res[i] = Number(((prev + nxt) / 2).toFixed(decimals));
                             }
                         }
                     }
@@ -684,8 +684,8 @@
                         if (d1 * d2 > 0 && Math.abs(c1 - c2) < Math.max(Math.abs(d1), Math.abs(d2)) * 0.6) {
                             const spikeMag = Math.min(Math.abs(d1), Math.abs(d2));
                             if (spikeMag > Math.max(bridgeDiff * 1.8, minSpikeThreshold)) {
-                                res[i] = Number((prev + (nxt - prev) * (1 / 3)).toFixed(2));
-                                res[i + 1] = Number((prev + (nxt - prev) * (2 / 3)).toFixed(2));
+                                res[i] = Number((prev + (nxt - prev) * (1 / 3)).toFixed(decimals));
+                                res[i + 1] = Number((prev + (nxt - prev) * (2 / 3)).toFixed(decimals));
                             }
                         }
                     }
@@ -694,7 +694,7 @@
                 };
 
                 // Simple Moving Average function to filter noise
-                const movingAverage = (arr, windowSize = 3) => {
+                const movingAverage = (arr, windowSize = 3, decimals = 2) => {
                     let res = [];
                     for (let i = 0; i < arr.length; i++) {
                         let sum = 0, count = 0;
@@ -702,14 +702,14 @@
                             sum += arr[j];
                             count++;
                         }
-                        res.push(Number((sum / count).toFixed(2)));
+                        res.push(Number((sum / count).toFixed(decimals)));
                     }
                     return res;
                 };
 
                 // Pipeline: Despike Anomaly Filter -> Moving Average Smoother
-                const cleanSensorData = (arr, threshold = 2.0) => {
-                    return movingAverage(despikeFilter(arr, threshold), 3);
+                const cleanSensorData = (arr, threshold = 2.0, decimals = 2) => {
+                    return movingAverage(despikeFilter(arr, threshold, decimals), 3, decimals);
                 };
 
                 // Helper for soil average across tables
@@ -726,7 +726,8 @@
                     if (l.meja2 && l.meja2[param] !== undefined) parseAndPush(l.meja2[param]);
                     if (l.meja3 && l.meja3[param] !== undefined) parseAndPush(l.meja3[param]);
                     if (vals.length === 0) return 0;
-                    return Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2));
+                    const dec = param === 'ec' ? 3 : 2;
+                    return Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(dec));
                 };
 
                 // Cleaned Environment Data Series
@@ -738,7 +739,7 @@
                 const soilSuhu = cleanSensorData(chartLogs.map(l => getAvg(l, 'suhu')), 1.5);
                 const soilHumid = cleanSensorData(chartLogs.map(l => getAvg(l, 'kelembapan')), 3.0);
                 const soilPh = cleanSensorData(chartLogs.map(l => getAvg(l, 'ph')), 0.3);
-                const soilEc = cleanSensorData(chartLogs.map(l => getAvg(l, 'ec')), 0.25);
+                const soilEc = cleanSensorData(chartLogs.map(l => getAvg(l, 'ec')), 0.25, 3);
 
                 // --- MASTER CHART RENDERING LOGIC ---
                 const renderMasterChart = () => {
@@ -778,8 +779,8 @@
                         yaxisOptions = [{ title: { text: 'pH', style: { color: '#ec4899' } }, labels: { style: { colors: '#ec4899' }, formatter: v => v.toFixed(2) } }];
                         colors = ['#ec4899']; strokeWidth = [2];
                     } else if (selection === 'soilEc') {
-                        series = [{ name: 'Conductivity (µS/cm)', type: 'area', data: soilEc }];
-                        yaxisOptions = [{ title: { text: 'Conductivity (µS/cm)', style: { color: '#14b8a6' } }, labels: { style: { colors: '#14b8a6' }, formatter: v => v.toFixed(0) } }];
+                        series = [{ name: 'Conductivity (mS/cm)', type: 'area', data: soilEc }];
+                        yaxisOptions = [{ title: { text: 'Conductivity (mS/cm)', style: { color: '#14b8a6' } }, labels: { style: { colors: '#14b8a6' }, formatter: v => v.toFixed(3) } }];
                         colors = ['#14b8a6']; strokeWidth = [2];
                     } 
                     // Comparison Configurations
@@ -806,11 +807,11 @@
                     } else if (selection === 'compPhEc') {
                         series = [
                             { name: 'pH', type: 'area', data: soilPh },
-                            { name: 'Conductivity (µS/cm)', type: 'area', data: soilEc }
+                            { name: 'Conductivity (mS/cm)', type: 'area', data: soilEc }
                         ];
                         yaxisOptions = [
                             { seriesName: 'pH', title: { text: 'pH', style: { color: '#ec4899' } }, labels: { style: { colors: '#ec4899' }, formatter: v => v.toFixed(2) } },
-                            { seriesName: 'Conductivity (µS/cm)', opposite: true, title: { text: 'Conductivity (µS/cm)', style: { color: '#14b8a6' } }, labels: { style: { colors: '#14b8a6' }, formatter: v => v.toFixed(0) } }
+                            { seriesName: 'Conductivity (mS/cm)', opposite: true, title: { text: 'Conductivity (mS/cm)', style: { color: '#14b8a6' } }, labels: { style: { colors: '#14b8a6' }, formatter: v => v.toFixed(3) } }
                         ];
                         colors = ['#ec4899', '#14b8a6']; strokeWidth = [2, 2];
                     }
@@ -1140,13 +1141,18 @@
             }
         }
 
-        function updateGauge(circleId, textId, value, min, max, unit) {
+        function updateGauge(circleId, textId, value, min, max, unit, decimals = null) {
             const circle = document.getElementById(circleId);
             const textEl = document.getElementById(textId);
             const num = parseFloat(value);
 
             if (textEl) {
                 if (!isNaN(num)) {
+                    const formatVal = (v) => {
+                        if (decimals !== null) return v.toFixed(decimals);
+                        return (num % 1 !== 0) ? v.toFixed(2) : Math.round(v);
+                    };
+
                     if (typeof gsap !== 'undefined') {
                         const currentVal = parseFloat(textEl.innerText) || 0;
                         const targetObj = { val: currentVal };
@@ -1155,14 +1161,11 @@
                             duration: 1.2,
                             ease: "power2.out",
                             onUpdate: function() {
-                                const current = targetObj.val;
-                                const formatted = (num % 1 !== 0) ? current.toFixed(2) : Math.round(current);
-                                textEl.innerText = formatted + (unit || '');
+                                textEl.innerText = formatVal(targetObj.val) + (unit || '');
                             }
                         });
                     } else {
-                        const formatted = (num % 1 !== 0) ? num.toFixed(2) : num;
-                        textEl.innerText = formatted + (unit || '');
+                        textEl.innerText = formatVal(num) + (unit || '');
                     }
                 } else {
                     textEl.innerText = value;
@@ -1201,19 +1204,19 @@
             // Default Meja 1 (Suhu & Moisture text, EC & pH gauge)
             setMetricText('vM1Suhu', 23.5, '°C');
             setMetricText('vM1Humid', 71, '%');
-            updateGauge('cM1EC', 'vM1EC', 600, 0, 2000, '');
+            updateGauge('cM1EC', 'vM1EC', 1.200, 0, 3, '', 3);
             updateGauge('cM1pH', 'vM1pH', 6.5, 0, 14, '');
 
             // Default Meja 2
             setMetricText('vM2Suhu', 23.8, '°C');
             setMetricText('vM2Humid', 68, '%');
-            updateGauge('cM2EC', 'vM2EC', 550, 0, 2000, '');
+            updateGauge('cM2EC', 'vM2EC', 1.100, 0, 3, '', 3);
             updateGauge('cM2pH', 'vM2pH', 6.2, 0, 14, '');
 
             // Default Meja 3
             setMetricText('vM3Suhu', 24.1, '°C');
             setMetricText('vM3Humid', 75, '%');
-            updateGauge('cM3EC', 'vM3EC', 700, 0, 2000, '');
+            updateGauge('cM3EC', 'vM3EC', 1.400, 0, 3, '', 3);
             updateGauge('cM3pH', 'vM3pH', 6.7, 0, 14, '');
 
             // Polling telemetry real-time
@@ -1303,7 +1306,7 @@
                     if (data.meja1) {
                         setMetricText('vM1Suhu', data.meja1.suhu, '°C');
                         setMetricText('vM1Humid', data.meja1.kelembapan, '%');
-                        updateGauge('cM1EC', 'vM1EC', data.meja1.ec, 0, 2000, '');
+                        updateGauge('cM1EC', 'vM1EC', data.meja1.ec, 0, 3, '', 3);
                         updateGauge('cM1pH', 'vM1pH', data.meja1.ph, 0, 14, '');
                     }
 
@@ -1311,7 +1314,7 @@
                     if (data.meja2) {
                         setMetricText('vM2Suhu', data.meja2.suhu, '°C');
                         setMetricText('vM2Humid', data.meja2.kelembapan, '%');
-                        updateGauge('cM2EC', 'vM2EC', data.meja2.ec, 0, 2000, '');
+                        updateGauge('cM2EC', 'vM2EC', data.meja2.ec, 0, 3, '', 3);
                         updateGauge('cM2pH', 'vM2pH', data.meja2.ph, 0, 14, '');
                     }
 
@@ -1319,7 +1322,7 @@
                     if (data.meja3) {
                         setMetricText('vM3Suhu', data.meja3.suhu, '°C');
                         setMetricText('vM3Humid', data.meja3.kelembapan, '%');
-                        updateGauge('cM3EC', 'vM3EC', data.meja3.ec, 0, 2000, '');
+                        updateGauge('cM3EC', 'vM3EC', data.meja3.ec, 0, 3, '', 3);
                         updateGauge('cM3pH', 'vM3pH', data.meja3.ph, 0, 14, '');
                     }
 
