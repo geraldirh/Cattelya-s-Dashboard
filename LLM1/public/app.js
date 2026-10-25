@@ -123,6 +123,49 @@
 
         async function toggleManualActuator(act, on) {
             if (actuatorMode !== 'manual') return;
+
+            const swMap = {
+                exhaust_fan: 'exhaust_fanSwitch',
+                penyiraman_air: 'penyiraman_airSwitch',
+                penyiraman_pupuk: 'penyiraman_pupukSwitch',
+                mist_ruangan: 'mist_ruanganSwitch'
+            };
+            const nameMap = {
+                exhaust_fan: 'Exhaust Fan',
+                penyiraman_air: 'Pompa Air Murni',
+                penyiraman_pupuk: 'Pompa Nutrisi',
+                mist_ruangan: 'Mist Ruangan'
+            };
+
+            // Verifikasi konfirmasi khusus saat ingin menyalakan aktuator
+            if (on) {
+                const actName = nameMap[act] || act;
+                let confirmed = false;
+
+                if (typeof Swal !== 'undefined') {
+                    const result = await Swal.fire({
+                        title: 'Konfirmasi Menyalakan Aktuator',
+                        html: `Apakah Anda yakin ingin menyalakan <b>${actName}</b> secara manual?`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#2e7d32',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Ya, Nyalakan',
+                        cancelButtonText: 'Batal',
+                        reverseButtons: true
+                    });
+                    confirmed = result.isConfirmed;
+                } else {
+                    confirmed = window.confirm(`Apakah Anda yakin ingin menyalakan ${actName}?`);
+                }
+
+                if (!confirmed) {
+                    const swEl = document.getElementById(swMap[act]);
+                    if (swEl) swEl.checked = false;
+                    return;
+                }
+            }
+
             const state = on ? 1 : 0;
             currentActuators[act] = state;
 
@@ -147,7 +190,6 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ device: act, state: state, payload_data: payload })
                 });
-
 
             } catch (err) {
                 console.error("Gagal mengirim perintah ke MQTT:", err);
