@@ -176,9 +176,8 @@
             <div class="dashboard-layout">
                 <!-- Parameter Cards Grid -->
                 <div class="params-grid">
-
                     <!-- Cuaca -->
-                    <div class="weather-card col-50">
+                    <div class="weather-card col-25">
                         <div class="metric-card-head" style="border-bottom:none; margin-bottom:4px;">
                             <span class="metric-card-icon"><i data-lucide="cloud-sun"></i></span>
                             <span class="metric-card-title" style="color:rgba(255,255,255,0.9);">Cuaca Saat Ini</span>
@@ -200,7 +199,7 @@
                     </div>
 
                     <!-- Informasi Lingkungan -->
-                    <div class="metric-card col-50">
+                    <div class="metric-card col-25">
                         <div class="metric-card-head">
                             <span class="metric-card-icon"><i data-lucide="leaf"></i></span>
                             <span class="metric-card-title">Informasi Lingkungan</span>
@@ -240,6 +239,55 @@
                         </div>
                     </div>
 
+                    <!-- Intensitas Cahaya (Card Baru) -->
+                    <div class="metric-card col-25">
+                        <div class="metric-card-head">
+                            <span class="metric-card-icon"><i data-lucide="sun"></i></span>
+                            <span class="metric-card-title">Intensitas Cahaya</span>
+                        </div>
+                        <div class="gauges-centered-row">
+                            <div class="gauge-item">
+                                <div class="gauge-wrap">
+                                    <svg class="gauge-svg" viewBox="0 0 80 80">
+                                        <circle cx="40" cy="40" r="32" stroke="#f1f5f9" stroke-width="6" fill="none" />
+                                        <circle id="cLuxGauge" cx="40" cy="40" r="32" stroke="#f9a825" stroke-width="6"
+                                            fill="none" stroke-linecap="round" stroke-dasharray="0 201.1"
+                                            style="transition:stroke-dasharray .6s ease" />
+                                    </svg>
+                                    <div class="gauge-val" id="vLux" style="font-size:0.85rem;">4500</div>
+                                </div>
+                                <span class="gauge-lbl">Lux</span>
+                            </div>
+                        </div>
+                        <div class="soil-stat-box" style="margin: 0 auto; width: 85%; margin-top: 15px;">
+                            <div class="soil-stat-lbl">Status Pencahayaan</div>
+                            <div class="soil-stat-val" id="luxStatusText"
+                                style="color: var(--primary); font-size: 0.95rem;">Optimal</div>
+                        </div>
+                    </div>
+
+                    <!-- Informasi Air / Toren Nutrisi -->
+                    <div class="metric-card col-25">
+                        <div class="metric-card-head">
+                            <span class="metric-card-icon"><i data-lucide="droplet"></i></span>
+                            <span class="metric-card-title">Kualitas Toren Nutrisi</span>
+                        </div>
+                        <div class="gauges-centered-row">
+                            <!-- TDS -->
+                            <div class="gauge-item">
+                                <div class="gauge-wrap">
+                                    <svg class="gauge-svg" viewBox="0 0 80 80">
+                                        <circle cx="40" cy="40" r="32" stroke="#f1f5f9" stroke-width="6" fill="none" />
+                                        <circle id="cTDS" cx="40" cy="40" r="32" stroke="#0277bd" stroke-width="6"
+                                            fill="none" stroke-linecap="round" stroke-dasharray="0 201.1"
+                                            style="transition:stroke-dasharray .6s ease" />
+                                    </svg>
+                                    <div class="gauge-val" id="vTDS" style="font-size:0.9rem;">210</div>
+                                </div>
+                                <span class="gauge-lbl">TDS (ppm)</span>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Section: Meja -->
                     <div class="col-100">
